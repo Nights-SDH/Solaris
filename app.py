@@ -369,7 +369,7 @@ def generate_daily_profile_chart(lat, lon, ghi_annual, tilt, azimuth):
     
     return img_bytes
 
-def calculate_financial_metrics(annual_energy, system_size=3.0, install_cost_per_kw=1800000, electricity_price=220, annual_degradation=0.005, lifetime=25, smp_price=180, rec_price=40):
+def calculate_enhanced_financial_metrics(annual_energy, system_size=3.0, install_cost_per_kw=1800000, electricity_price=220, annual_degradation=0.005, lifetime=25, smp_price=180, rec_price=40):
     """📌 향상된 태양광 발전 시스템의 재무 지표 계산 (SMP + REC 분리)"""
     # 시스템 비용 (원)
     total_cost = system_size * install_cost_per_kw
@@ -446,7 +446,7 @@ def calculate_financial_metrics(annual_energy, system_size=3.0, install_cost_per
         'net_profit': int(net_profit),
         'monthly_production': round(annual_production / 12, 1),
         'monthly_revenue': int(annual_revenue / 12)
-    }            
+    }     
 
 def generate_roi_chart(financial_data):
     """투자 수익 차트 생성"""
