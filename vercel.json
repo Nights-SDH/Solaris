@@ -1,4 +1,3 @@
-
 {
   "version": 2,
   "builds": [
@@ -15,10 +14,5 @@
   ],
   "env": {
     "PYTHONPATH": "/var/task"
-  },
-  "functions": {
-    "app.py": {
-      "maxDuration": 60
-    }
   }
 }
