@@ -1025,8 +1025,8 @@ def get_financial_metrics():
 if __name__ == '__main__':
     print("\n🌞 태양광 발전량 예측 시스템이 시작되었습니다!")
     print("🌍 브라우저에서 다음 주소로 접속하세요:")
-    print("   http://127.0.0.1:5000")
-    print("   또는 http://localhost:5000")
+    print("   http://127.0.0.1:80")
+    print("   또는 http://localhost:80")
     print("\n📊 기능:")
     print("   - 지도 클릭으로 태양광 발전량 계산")
     print("   - 경사각/방위각 조정")
@@ -1036,6 +1036,6 @@ if __name__ == '__main__':
     
     # Flask 앱 실행 (파일 변경 시 자동 재시작)
     try:
-        app.run(host='127.0.0.1', port=5000, debug=True)  # debug=True 추가
+        app.run(host='127.0.0.1', port=80, debug=True)  # debug=True 추가
     except KeyboardInterrupt:
         print("\n👋 서버가 종료되었습니다.")
