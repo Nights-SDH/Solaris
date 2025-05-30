@@ -14,7 +14,7 @@ from scipy.optimize import minimize
 from datetime import datetime
 matplotlib.use('Agg')
 
-# 🏭 태양광 발전량 계산 함수
+# 태양광 발전량 계산 함수
 def calculate_pv_energy(lat, lon, tilt, azimuth, ghi_annual, system_config=None):
     """완전히 안전한 태양광 발전량 계산"""
     try:
@@ -49,7 +49,7 @@ def calculate_pv_energy(lat, lon, tilt, azimuth, ghi_annual, system_config=None)
         temperature_factor = 0.94
         
         # 연간 발전량 계산
-        annual_energy = (float(ghi_annual) * float(total_efficiency) * 
+        annual_energy = (float(ghi_annual) * 365 * float(total_efficiency) * 
                         float(tilt_factor) * float(azimuth_factor) * 
                         float(latitude_factor) * float(temperature_factor))
         
