@@ -72,13 +72,17 @@ def calculate_pv_energy(lat, lon, tilt, azimuth, ghi_annual, system_config=None)
         # 온도 효과
         temp_effect = -6.0 + (lat - 36) * 0.3
         
-        return {
+        result = {
             'annual_energy': round(annual_energy, 1),
             'monthly_energy': monthly_energy,
             'temp_effect': round(temp_effect, 1),
             'optimal_tilt': round(optimal_tilt, 1),
             'optimal_azimuth': int(optimal_azimuth)
         }
+        print("================Result================")
+        print(result)
+        print("=================End==================")
+        return result
         
     except Exception as e:
         print(f"PV 계산 오류: {str(e)}")
