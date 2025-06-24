@@ -429,6 +429,7 @@ def index():
           font-size: 24px;
           color: #667eea;
           font-weight: bold;
+          flex-shrink: 0;
         }
         
         .logo-header h2 {
@@ -470,10 +471,9 @@ def index():
     <div class="container-fluid">
       <div class="row">
         <div class="col-lg-3 col-md-4 control-panel">
-          <!-- ✅ 로고 헤더 추가 (개선된 버전) -->
+          <!-- ✅ 로고 헤더 (단순화된 버전) -->
           <div class="logo-header">
-            <img id="logoImage" src="/design/logo/Solaris.png" alt="Solaris Logo" style="display: none;">
-            <div id="logoFallback" class="logo-fallback">☀️</div>
+            <div class="logo-fallback">☀️</div>
             <div>
               <h2>Solaris</h2>
               <div class="subtitle">태양광 발전량 예측 시스템</div>
@@ -1033,23 +1033,30 @@ def index():
       
       map.on('click', onMapClick);
       
-      // ✅ 로고 이미지 로딩 처리
-      const logoImage = document.getElementById('logoImage');
-      const logoFallback = document.getElementById('logoFallback');
+      // ✅ CSS background-image 방식으로 로고 로딩 시도
+      function tryLoadLogo() {
+        const logoFallback = document.querySelector('.logo-fallback');
+        
+        // CSS background-image로 로고 시도
+        const testImg = new Image();
+        testImg.onload = function() {
+          logoFallback.style.backgroundImage = 'url(/design/logo/Solaris.png)';
+          logoFallback.style.backgroundSize = 'contain';
+          logoFallback.style.backgroundRepeat = 'no-repeat';
+          logoFallback.style.backgroundPosition = 'center';
+          logoFallback.innerHTML = ''; // 이모지 제거
+          console.log('✅ 로고 이미지 로딩 성공 (CSS background)');
+        };
+        
+        testImg.onerror = function() {
+          console.log('⚠️ 로고 이미지 로딩 실패 - 태양 이모지 유지');
+        };
+        
+        testImg.src = '/design/logo/Solaris.png';
+      }
       
-      logoImage.onload = function() {
-        logoFallback.style.display = 'none';
-        logoImage.style.display = 'block';
-      };
-      
-      logoImage.onerror = function() {
-        logoFallback.style.display = 'flex';
-        logoImage.style.display = 'none';
-        console.log('로고 이미지를 찾을 수 없습니다. 기본 아이콘을 표시합니다.');
-      };
-      
-      // 로고 이미지 로딩 시도
-      logoImage.src = '/design/logo/Solaris.png';
+      // 페이지 로딩 완료 후 로고 로딩 시도
+      setTimeout(tryLoadLogo, 500);
     </script>
     </body>
     </html>
