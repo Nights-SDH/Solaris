@@ -298,7 +298,7 @@ def index():
     <html>
     <head>
       <meta charset="utf-8" />
-      <title>태양광 발전량 예측 시스템</title>
+      <title>Solaris - 태양광 발전량 예측 시스템</title>
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
       <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -378,6 +378,55 @@ def index():
           padding: 10px;
           margin-bottom: 15px;
         }
+        
+        /* ✅ 로고 스타일 추가 */
+        .logo-header {
+          display: flex;
+          align-items: center;
+          margin-bottom: 20px;
+          padding: 15px;
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          border-radius: 10px;
+          color: white;
+          box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        .logo-header img {
+          width: 50px;
+          height: 50px;
+          margin-right: 15px;
+          border-radius: 8px;
+          background: white;
+          padding: 5px;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .logo-header h2 {
+          margin: 0;
+          font-weight: 600;
+          font-size: 1.4rem;
+          text-shadow: 0 1px 3px rgba(0,0,0,0.3);
+        }
+        
+        .logo-header .subtitle {
+          font-size: 0.85rem;
+          opacity: 0.9;
+          margin-top: 2px;
+        }
+        
+        @media (max-width: 768px) {
+          .logo-header {
+            padding: 10px;
+          }
+          .logo-header img {
+            width: 40px;
+            height: 40px;
+            margin-right: 10px;
+          }
+          .logo-header h2 {
+            font-size: 1.2rem;
+          }
+        }
       </style>
     </head>
     <body>
@@ -391,7 +440,14 @@ def index():
     <div class="container-fluid">
       <div class="row">
         <div class="col-lg-3 col-md-4 control-panel">
-          <h2 class="mb-4">태양광 발전량 예측</h2>
+          <!-- ✅ 로고 헤더 추가 -->
+          <div class="logo-header">
+            <img src="design/logo/Solaris.png" alt="Solaris Logo" onerror="this.style.display='none'">
+            <div>
+              <h2>Solaris</h2>
+              <div class="subtitle">태양광 발전량 예측 시스템</div>
+            </div>
+          </div>
           
           <!-- 🔍 주소 검색 기능 추가 -->
           <div class="mb-4 p-3 bg-primary-subtle rounded">
