@@ -291,18 +291,6 @@ def calculate_financial_metrics(energy_per_kwp, system_size=3.0, install_cost_pe
 # 🚀 Flask 앱 설정
 app = Flask(__name__)
 
-# ✅ 정적 파일 서빙을 위한 라우트 추가
-@app.route('/design/logo/<filename>')
-def serve_logo(filename):
-    """로고 파일 서빙"""
-    try:
-        logo_path = os.path.join('design', 'logo')
-        return send_file(os.path.join(logo_path, filename))
-    except Exception as e:
-        print(f"로고 파일 서빙 오류: {str(e)}")
-        # 로고 파일이 없을 경우 404 반환
-        return "Logo not found", 404
-
 @app.route('/')
 def index():
     return render_template_string("""
@@ -310,7 +298,7 @@ def index():
     <html>
     <head>
       <meta charset="utf-8" />
-      <title>Solaris - 태양광 발전량 예측 시스템</title>
+      <title>태양광 발전량 예측 시스템</title>
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
       <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -411,25 +399,6 @@ def index():
           background: white;
           padding: 5px;
           box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-          /* ✅ 로고 로딩 실패 시 처리 */
-          object-fit: contain;
-        }
-        
-        .logo-header .logo-fallback {
-          width: 50px;
-          height: 50px;
-          margin-right: 15px;
-          border-radius: 8px;
-          background: white;
-          padding: 5px;
-          box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-size: 24px;
-          color: #667eea;
-          font-weight: bold;
-          flex-shrink: 0;
         }
         
         .logo-header h2 {
@@ -471,9 +440,9 @@ def index():
     <div class="container-fluid">
       <div class="row">
         <div class="col-lg-3 col-md-4 control-panel">
-          <!-- ✅ 로고 헤더 (단순화된 버전) -->
+          <!-- ✅ 로고 헤더 추가 -->
           <div class="logo-header">
-            <div class="logo-fallback">☀️</div>
+            <img src="design/logo/Solaris.png" alt="Solaris Logo" onerror="this.style.display='none'">
             <div>
               <h2>Solaris</h2>
               <div class="subtitle">태양광 발전량 예측 시스템</div>
@@ -1032,31 +1001,6 @@ def index():
       }
       
       map.on('click', onMapClick);
-      
-      // ✅ CSS background-image 방식으로 로고 로딩 시도
-      function tryLoadLogo() {
-        const logoFallback = document.querySelector('.logo-fallback');
-        
-        // CSS background-image로 로고 시도
-        const testImg = new Image();
-        testImg.onload = function() {
-          logoFallback.style.backgroundImage = 'url(/design/logo/Solaris.png)';
-          logoFallback.style.backgroundSize = 'contain';
-          logoFallback.style.backgroundRepeat = 'no-repeat';
-          logoFallback.style.backgroundPosition = 'center';
-          logoFallback.innerHTML = ''; // 이모지 제거
-          console.log('✅ 로고 이미지 로딩 성공 (CSS background)');
-        };
-        
-        testImg.onerror = function() {
-          console.log('⚠️ 로고 이미지 로딩 실패 - 태양 이모지 유지');
-        };
-        
-        testImg.src = '/design/logo/Solaris.png';
-      }
-      
-      // 페이지 로딩 완료 후 로고 로딩 시도
-      setTimeout(tryLoadLogo, 500);
     </script>
     </body>
     </html>
