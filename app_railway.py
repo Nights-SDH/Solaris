@@ -192,12 +192,6 @@ def calculate_financial_metrics(energy_per_kwp, system_size=3.0, install_cost_pe
     total_cost = system_size * install_cost_per_kw  # 총 설치비용 (원)
     annual_production = system_size * energy_per_kwp  # 연간 발전량 (kWh/년)
     
-    print(f"💰 경제성 계산:")
-    print(f"   - 시스템 용량: {system_size} kWp")
-    print(f"   - kWp당 발전량: {energy_per_kwp} kWh/kWp/년")
-    print(f"   - 총 연간발전량: {annual_production} kWh/년")
-    print(f"   - 총 설치비용: {total_cost:,} 원")
-    
     # ✅ 2. REC 수익 계산 개선 (가중치 적용)
     rec_weight = 1.5  # 영농형 태양광 등 가중치 (일반적으로 1.0~1.5)
     
@@ -206,10 +200,6 @@ def calculate_financial_metrics(energy_per_kwp, system_size=3.0, install_cost_pe
     # REC: 1MWh(1,000kWh)당 1REC 발급, 가중치 적용
     annual_rec_revenue = (annual_production / 1000) * rec_price * rec_weight
     annual_revenue = annual_smp_revenue + annual_rec_revenue
-    
-    print(f"   - SMP 수익: {annual_smp_revenue:,} 원/년")
-    print(f"   - REC 수익: {annual_rec_revenue:,} 원/년 (가중치 {rec_weight}x 적용)")
-    print(f"   - 총 연간수익: {annual_revenue:,} 원/년")
     
     # ✅ 3. 회수기간 계산 로직 개선
     cash_flows = []
@@ -265,12 +255,6 @@ def calculate_financial_metrics(energy_per_kwp, system_size=3.0, install_cost_pe
     # 회수기간이 25년 내에 없으면 None 처리
     if payback_period is None:
         payback_period = None
-    
-    print(f"   - 25년 총수익: {total_revenue_25years:,} 원")
-    print(f"   - 25년 유지비: {total_maintenance_25years:,} 원") 
-    print(f"   - 순이익: {net_profit:,} 원")
-    print(f"   - 투자회수기간: {payback_period} 년" if payback_period else "   - 투자회수기간: 25년 내 회수 불가")
-    print(f"   - ROI: {roi:.1f}%")
     
     return {
         'total_cost': int(total_cost),
@@ -371,62 +355,6 @@ def index():
           padding: 15px;
           margin-top: 20px;
         }
-        .ghi-info {
-          background-color: #fff3cd;
-          border: 1px solid #ffeeba;
-          border-radius: 5px;
-          padding: 10px;
-          margin-bottom: 15px;
-        }
-        
-        /* ✅ 로고 스타일 추가 */
-        .logo-header {
-          display: flex;
-          align-items: center;
-          margin-bottom: 20px;
-          padding: 15px;
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-          border-radius: 10px;
-          color: white;
-          box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-        }
-        
-        .logo-header img {
-          width: 50px;
-          height: 50px;
-          margin-right: 15px;
-          border-radius: 8px;
-          background: white;
-          padding: 5px;
-          box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        }
-        
-        .logo-header h2 {
-          margin: 0;
-          font-weight: 600;
-          font-size: 1.4rem;
-          text-shadow: 0 1px 3px rgba(0,0,0,0.3);
-        }
-        
-        .logo-header .subtitle {
-          font-size: 0.85rem;
-          opacity: 0.9;
-          margin-top: 2px;
-        }
-        
-        @media (max-width: 768px) {
-          .logo-header {
-            padding: 10px;
-          }
-          .logo-header img {
-            width: 40px;
-            height: 40px;
-            margin-right: 10px;
-          }
-          .logo-header h2 {
-            font-size: 1.2rem;
-          }
-        }
       </style>
     </head>
     <body>
@@ -440,14 +368,7 @@ def index():
     <div class="container-fluid">
       <div class="row">
         <div class="col-lg-3 col-md-4 control-panel">
-          <!-- ✅ 로고 헤더 추가 -->
-          <div class="logo-header">
-            <img src="design/logo/Solaris.png" alt="Solaris Logo" onerror="this.style.display='none'">
-            <div>
-              <h2>Solaris</h2>
-              <div class="subtitle">태양광 발전량 예측 시스템</div>
-            </div>
-          </div>
+          <h2 class="mb-4">태양광 발전량 예측</h2>
           
           <!-- 🔍 주소 검색 기능 추가 -->
           <div class="mb-4 p-3 bg-primary-subtle rounded">
@@ -917,7 +838,7 @@ def index():
               return;
             }
             
-            // ✅ 결과 표시 (GHI 정보 개선)
+            // ✅ 결과 표시
             document.getElementById('resultsContainer').style.display = 'block';
             document.getElementById('locationText').textContent = `${lat}, ${lon}`;
             
@@ -936,7 +857,7 @@ def index():
             fetch(`/get_financial_metrics?energy_per_kwp=${data.energy}&system_size=${systemSize}&install_cost=${installCostPerKw}&smp_price=${smpPrice}&rec_price=${recPrice}`)
               .then(res => res.json())
               .then(financialData => {
-                // 📌 3. 최종 출력 – 수익 예측 및 ROI 계산 (단위 명시)
+                // 📌 3. 최종 출력 – 수익 예측 및 ROI 계산
                 financialMetrics.style.display = 'block';
                 
                 // 설치 가능 용량 표시
@@ -953,7 +874,7 @@ def index():
                     `${currentSystemSize}kWp (면적 미입력)`;
                 }
                 
-                // ✅ 기본 정보 (단위 명시)
+                // ✅ 기본 정보
                 document.getElementById('totalCostText').textContent = `${financialData.total_cost.toLocaleString()}원`;
                 document.getElementById('annualProductionText').textContent = `${financialData.annual_production.toLocaleString()}kWh/년`;
                 document.getElementById('annualRevenueText').textContent = `${financialData.annual_revenue.toLocaleString()}원/년`;
@@ -1065,12 +986,12 @@ def get_pv_data():
     try:
         res = requests.get(url, timeout=10).json()
         ghi_daily = res['properties']['parameter']['ALLSKY_SFC_SW_DWN']['ANN']
-        print(f"🌞 NASA API 응답: 위치({lat}, {lon}), GHI 일일값={ghi_daily} kWh/m²/일")
+        print(f"🌞 NASA API 응답: 위치({lat}, {lon}), GHI={ghi_daily} kWh/m²/1Day")
     except Exception as e:
         print(f"❌ NASA API 오류: {str(e)}")
         return jsonify({'error': f'GHI data not found: {str(e)}'}), 500
     
-    # ✅ 태양광 발전량 계산 (수정된 함수 사용)
+    # 태양광 발전량 계산
     try:
         pv_result = calculate_pv_energy(lat=lat, lon=lon, tilt=tilt, azimuth=azimuth, ghi_daily=ghi_daily)
         print(f"⚡ 계산 결과: 연간 발전량={pv_result['annual_energy']} kWh/kWp")
@@ -1078,7 +999,6 @@ def get_pv_data():
         print(f"❌ 발전량 계산 오류: {str(e)}")
         return jsonify({'error': f'PV calculation error: {str(e)}'}), 500
     
-    # ✅ 응답에 일일값과 연간값 모두 포함
     ghi_annual = ghi_daily * 365
     
     return jsonify({
@@ -1109,7 +1029,7 @@ def get_monthly_chart():
     except:
         return "Error: GHI data not found", 500
     
-    # ✅ 발전량 계산 (수정된 함수 사용)
+    # ✅ 발전량 계산
     pv_result = calculate_pv_energy(lat=lat, lon=lon, tilt=tilt, azimuth=azimuth, ghi_daily=ghi_daily)
     
     # 차트 생성
@@ -1119,7 +1039,6 @@ def get_monthly_chart():
 
 @app.route('/get_financial_metrics')
 def get_financial_metrics():
-    # ✅ 파라미터명 수정: annual_energy → energy_per_kwp
     energy_per_kwp = request.args.get('energy_per_kwp', type=float)
     system_size = request.args.get('system_size', default=3.0, type=float)
     install_cost = request.args.get('install_cost', default=1800000, type=float)
@@ -1148,12 +1067,6 @@ if __name__ == '__main__':
     print("   - 경사각/방위각 조정")
     print("   - 경제성 분석")
     print("   - 월별 발전량 차트")
-    print("\n✅ 모든 계산 오류 수정 완료!")
-    print("   - GHI 단위 변환: 일일값 → 연간값")
-    print("   - 발전량 이중 곱셈 방지: energy_per_kwp 단위 명시")
-    print("   - REC 가중치 적용: 1.5x")
-    print("   - 회수기간 계산 로직 개선")
-    print("   - ROI 계산 정확성 향상")
     
     # Railway 환경에서 실행
     app.run(host='0.0.0.0', port=port, debug=False)
