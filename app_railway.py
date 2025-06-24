@@ -291,6 +291,18 @@ def calculate_financial_metrics(energy_per_kwp, system_size=3.0, install_cost_pe
 # 🚀 Flask 앱 설정
 app = Flask(__name__)
 
+# ✅ 정적 파일 서빙을 위한 라우트 추가
+@app.route('/design/logo/<filename>')
+def serve_logo(filename):
+    """로고 파일 서빙"""
+    try:
+        logo_path = os.path.join('design', 'logo')
+        return send_file(os.path.join(logo_path, filename))
+    except Exception as e:
+        print(f"로고 파일 서빙 오류: {str(e)}")
+        # 로고 파일이 없을 경우 404 반환
+        return "Logo not found", 404
+
 @app.route('/')
 def index():
     return render_template_string("""
@@ -399,6 +411,24 @@ def index():
           background: white;
           padding: 5px;
           box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+          /* ✅ 로고 로딩 실패 시 처리 */
+          object-fit: contain;
+        }
+        
+        .logo-header .logo-fallback {
+          width: 50px;
+          height: 50px;
+          margin-right: 15px;
+          border-radius: 8px;
+          background: white;
+          padding: 5px;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 24px;
+          color: #667eea;
+          font-weight: bold;
         }
         
         .logo-header h2 {
@@ -440,9 +470,10 @@ def index():
     <div class="container-fluid">
       <div class="row">
         <div class="col-lg-3 col-md-4 control-panel">
-          <!-- ✅ 로고 헤더 추가 -->
+          <!-- ✅ 로고 헤더 추가 (개선된 버전) -->
           <div class="logo-header">
-            <img src="design/logo/Solaris.png" alt="Solaris Logo" onerror="this.style.display='none'">
+            <img id="logoImage" src="/design/logo/Solaris.png" alt="Solaris Logo" style="display: none;">
+            <div id="logoFallback" class="logo-fallback">☀️</div>
             <div>
               <h2>Solaris</h2>
               <div class="subtitle">태양광 발전량 예측 시스템</div>
@@ -1001,6 +1032,24 @@ def index():
       }
       
       map.on('click', onMapClick);
+      
+      // ✅ 로고 이미지 로딩 처리
+      const logoImage = document.getElementById('logoImage');
+      const logoFallback = document.getElementById('logoFallback');
+      
+      logoImage.onload = function() {
+        logoFallback.style.display = 'none';
+        logoImage.style.display = 'block';
+      };
+      
+      logoImage.onerror = function() {
+        logoFallback.style.display = 'flex';
+        logoImage.style.display = 'none';
+        console.log('로고 이미지를 찾을 수 없습니다. 기본 아이콘을 표시합니다.');
+      };
+      
+      // 로고 이미지 로딩 시도
+      logoImage.src = '/design/logo/Solaris.png';
     </script>
     </body>
     </html>
