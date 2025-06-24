@@ -1,6 +1,6 @@
 # 🌞 완전히 안전한 태양광 발전량 예측 시스템 (모든 오류 수정)
 import os
-from flask import Flask, request, jsonify, render_template_string, send_file
+from flask import Flask, request, jsonify, render_template_string, send_file, send_from_directory
 import requests
 import json
 import time
@@ -298,6 +298,16 @@ def calculate_financial_metrics(energy_per_kwp, system_size=3.0, install_cost_pe
 # 🚀 Flask 앱 설정
 app = Flask(__name__)
 
+# 정적 파일 라우트 추가 (로고 이미지 서빙)
+@app.route('/static/<path:filename>')
+def static_files(filename):
+    """정적 파일 서빙 (로고 이미지 등)"""
+    try:
+        return send_from_directory('design/logo/Solaris', filename)
+    except FileNotFoundError:
+        # 로고 파일이 없을 경우 기본 이미지 또는 404 처리
+        return "Logo not found", 404
+
 @app.route('/')
 def index():
     return render_template_string("""
@@ -305,7 +315,7 @@ def index():
     <html>
     <head>
       <meta charset="utf-8" />
-      <title>태양광 발전량 예측 시스템</title>
+      <title>Solaris - 태양광 발전량 예측 시스템</title>
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
       <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -323,6 +333,66 @@ def index():
           border-right: 2px solid #dee2e6;
         }
         
+        /* 로고 스타일 */
+        .logo-container {
+          display: flex;
+          align-items: center;
+          margin-bottom: 20px;
+          padding: 15px;
+          background: linear-gradient(135deg, #ffd700, #ff8c00);
+          border-radius: 10px;
+          box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        
+        .logo-container img {
+          height: 40px;
+          width: auto;
+          margin-right: 12px;
+          filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
+        }
+        
+        .logo-text {
+          color: #fff;
+          font-weight: 700;
+          font-size: 1.5rem;
+          text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+          margin: 0;
+        }
+        
+        .logo-subtitle {
+          color: #fff;
+          font-size: 0.8rem;
+          opacity: 0.9;
+          margin: 0;
+          font-weight: 400;
+        }
+        
+        /* 헤더에 작은 로고 */
+        .header-logo {
+          position: absolute;
+          top: 10px;
+          right: 10px;
+          z-index: 1000;
+          background: rgba(255, 255, 255, 0.95);
+          padding: 8px 12px;
+          border-radius: 8px;
+          box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+          backdrop-filter: blur(10px);
+        }
+        
+        .header-logo img {
+          height: 25px;
+          width: auto;
+        }
+        
+        .header-logo-text {
+          font-size: 0.75rem;
+          font-weight: 600;
+          color: #333;
+          margin: 0 0 0 8px;
+          display: inline-block;
+        }
+        
         /* 모바일 반응형 */
         @media (max-width: 768px) {
           .control-panel {
@@ -337,7 +407,30 @@ def index():
           .row {
             height: auto;
           }
+          .logo-container {
+            margin-bottom: 15px;
+            padding: 10px;
+          }
+          .logo-container img {
+            height: 30px;
+          }
+          .logo-text {
+            font-size: 1.2rem;
+          }
+          .header-logo {
+            position: fixed;
+            top: 5px;
+            right: 5px;
+            padding: 5px 8px;
+          }
+          .header-logo img {
+            height: 20px;
+          }
+          .header-logo-text {
+            display: none; /* 모바일에서는 텍스트 숨김 */
+          }
         }
+        
         .chart-container {
           margin-top: 20px;
           padding: 10px;
@@ -388,6 +481,12 @@ def index():
       </style>
     </head>
     <body>
+    <!-- 헤더 로고 (지도 위에 표시) -->
+    <div class="header-logo d-flex align-items-center">
+      <img src="/static/png" alt="Solaris Logo" onerror="this.style.display='none'">
+      <span class="header-logo-text">Solaris</span>
+    </div>
+    
     <div class="loading" id="loadingIndicator">
       <div style="text-align: center;">
         <div class="loader"></div>
@@ -398,7 +497,14 @@ def index():
     <div class="container-fluid">
       <div class="row">
         <div class="col-lg-3 col-md-4 control-panel">
-          <h2 class="mb-4">태양광 발전량 예측</h2>
+          <!-- 메인 로고 섹션 -->
+          <div class="logo-container">
+            <img src="/static/png" alt="Solaris Logo" onerror="this.style.display='none'">
+            <div>
+              <h2 class="logo-text">Solaris</h2>
+              <p class="logo-subtitle">태양광 발전량 예측 시스템</p>
+            </div>
+          </div>
           
           <!-- 🔍 주소 검색 기능 추가 -->
           <div class="mb-4 p-3 bg-primary-subtle rounded">
@@ -1092,13 +1198,14 @@ def get_financial_metrics():
 if __name__ == '__main__':
     # Railway에서 제공하는 PORT 환경변수 사용
     port = int(os.environ.get('PORT', 5000))
-    print(f"\n🌞 태양광 발전량 예측 시스템이 시작되었습니다!")
+    print(f"\n🌞 Solaris 태양광 발전량 예측 시스템이 시작되었습니다!")
     print(f"🌍 포트: {port}")
     print("\n📊 기능:")
     print("   - 지도 클릭으로 태양광 발전량 계산")
     print("   - 경사각/방위각 조정")
     print("   - 경제성 분석")
     print("   - 월별 발전량 차트")
+    print("   - Solaris 브랜드 로고 적용")
     print("\n✅ 모든 계산 오류 수정 완료!")
     print("   - GHI 단위 변환: 일일값 → 연간값")
     print("   - 발전량 이중 곱셈 방지: energy_per_kwp 단위 명시")
@@ -1106,6 +1213,7 @@ if __name__ == '__main__':
     print("   - 회수기간 계산 로직 개선")
     print("   - ROI 계산 정확성 향상")
     print("   - JavaScript API 호출 파라미터 수정")
+    print("   - 로고 파일 경로: design/logo/Solaris/png")
     
     # Railway 환경에서 실행
     app.run(host='0.0.0.0', port=port, debug=False)
