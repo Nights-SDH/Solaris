@@ -14,7 +14,7 @@ from scipy.optimize import minimize
 from datetime import datetime
 matplotlib.use('Agg')
 
-# 태양광 발전량 계산 함수
+# 🏭 태양광 발전량 계산 함수
 def calculate_pv_energy(lat, lon, tilt, azimuth, ghi_annual, system_config=None):
     """완전히 안전한 태양광 발전량 계산"""
     try:
@@ -49,7 +49,7 @@ def calculate_pv_energy(lat, lon, tilt, azimuth, ghi_annual, system_config=None)
         temperature_factor = 0.94
         
         # 연간 발전량 계산
-        annual_energy = (float(ghi_annual) * 365 * float(total_efficiency) * 
+        annual_energy = (float(ghi_annual) * float(total_efficiency) * 
                         float(tilt_factor) * float(azimuth_factor) * 
                         float(latitude_factor) * float(temperature_factor))
         
@@ -72,17 +72,13 @@ def calculate_pv_energy(lat, lon, tilt, azimuth, ghi_annual, system_config=None)
         # 온도 효과
         temp_effect = -6.0 + (lat - 36) * 0.3
         
-        result = {
+        return {
             'annual_energy': round(annual_energy, 1),
             'monthly_energy': monthly_energy,
             'temp_effect': round(temp_effect, 1),
             'optimal_tilt': round(optimal_tilt, 1),
             'optimal_azimuth': int(optimal_azimuth)
         }
-        print("================Result================")
-        print(result)
-        print("=================End==================")
-        return result
         
     except Exception as e:
         print(f"PV 계산 오류: {str(e)}")
@@ -142,18 +138,8 @@ def generate_pv_chart(monthly_energy):
         months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
                  'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
         
-        # 폰트 설정
-        try:
-            import matplotlib.font_manager as fm
-            font_candidates = ['Malgun Gothic', 'NanumGothic', 'Arial Unicode MS', 'DejaVu Sans']
-            for font_name in font_candidates:
-                try:
-                    plt.rcParams['font.family'] = font_name
-                    break
-                except:
-                    continue
-        except:
-            pass
+        # 폰트 설정 (Railway 환경에서 안전한 폰트)
+        plt.rcParams['font.family'] = 'DejaVu Sans'
         
         plt.figure(figsize=(10, 6))
         bars = plt.bar(months, monthly_energy, color='#2196F3')
@@ -575,13 +561,13 @@ def index():
       const searchResults = document.getElementById('searchResults');
       const searchResultText = document.getElementById('searchResultText');
       
-      // 주소 검색 함수 (Kakao Map API 사용)
+      // 주소 검색 함수
       async function searchAddress(address) {
         try {
           loadingIndicator.style.display = 'flex';
           searchResults.style.display = 'none';
           
-          // Kakao REST API를 사용한 주소 검색
+          // 주소 검색 API 호출
           const response = await fetch(`/search_address?query=${encodeURIComponent(address)}`);
           const data = await response.json();
           
@@ -726,7 +712,7 @@ def index():
         if (currentLatLng) updateResults();
       });
       
-      // 다른 입력 요소들 이벤트 리스너 (systemSizeInput 제거 - 위에서 별도 처리)
+      // 다른 입력 요소들 이벤트 리스너
       const inputElements = [
         installCostInput, smpPriceInput, recPriceInput
       ];
@@ -827,7 +813,7 @@ def index():
                 // 📌 3. 최종 출력 – 수익 예측 및 ROI 계산
                 financialMetrics.style.display = 'block';
                 
-                // 설치 가능 용량 표시 (개선된 버전)
+                // 설치 가능 용량 표시
                 const landArea = parseFloat(landAreaInput.value) || 0;
                 const currentSystemSize = parseFloat(systemSizeInput.value) || 0;
                 const maxCapacity = landArea >= 32 ? Math.floor(landArea / 32) : 0;
@@ -878,64 +864,41 @@ def index():
 
 @app.route('/search_address')
 def search_address():
-    """한국 주소 검색 API (Kakao REST API 사용)"""
+    """한국 주소 검색 API (Nominatim 사용)"""
     query = request.args.get('query', '')
     if not query:
         return jsonify({'error': '검색어를 입력해주세요.'}), 400
     
     try:
-        # Kakao REST API 키 (무료 사용 가능)
-        # 실제 사용 시에는 환경변수나 설정 파일에서 관리하세요
-        KAKAO_API_KEY = "YOUR_KAKAO_REST_API_KEY"  # 실제 키로 교체 필요
+        # Nominatim API 사용 (무료, 키 불필요)
+        nominatim_url = f"https://nominatim.openstreetmap.org/search"
+        params = {
+            'q': f"{query} South Korea",
+            'format': 'json',
+            'limit': 1,
+            'countrycodes': 'kr',
+            'addressdetails': 1
+        }
         
-        # 대안: Nominatim (OpenStreetMap) API 사용 (무료)
-        # Kakao API 키가 없는 경우 Nominatim 사용
-        if KAKAO_API_KEY == "YOUR_KAKAO_REST_API_KEY":
-            # Nominatim API 사용 (무료, 키 불필요)
-            nominatim_url = f"https://nominatim.openstreetmap.org/search"
-            params = {
-                'q': f"{query} South Korea",
-                'format': 'json',
-                'limit': 1,
-                'countrycodes': 'kr',
-                'addressdetails': 1
-            }
-            
-            headers = {
-                'User-Agent': 'SolarCalculator/1.0'
-            }
-            
-            response = requests.get(nominatim_url, params=params, headers=headers, timeout=10)
-            data = response.json()
-            
-            if data and len(data) > 0:
-                result = data[0]
-                return jsonify({
-                    'documents': [{
-                        'y': result['lat'],
-                        'x': result['lon'],
-                        'address_name': result.get('display_name', ''),
-                        'place_name': result.get('display_name', '')
-                    }]
-                })
-            else:
-                return jsonify({'documents': []})
+        headers = {
+            'User-Agent': 'SolarCalculator/1.0'
+        }
         
+        response = requests.get(nominatim_url, params=params, headers=headers, timeout=10)
+        data = response.json()
+        
+        if data and len(data) > 0:
+            result = data[0]
+            return jsonify({
+                'documents': [{
+                    'y': result['lat'],
+                    'x': result['lon'],
+                    'address_name': result.get('display_name', ''),
+                    'place_name': result.get('display_name', '')
+                }]
+            })
         else:
-            # Kakao API 사용 (키가 있는 경우)
-            kakao_url = "https://dapi.kakao.com/v2/local/search/address.json"
-            headers = {
-                'Authorization': f'KakaoAK {KAKAO_API_KEY}'
-            }
-            params = {
-                'query': query,
-                'size': 1
-            }
-            
-            response = requests.get(kakao_url, headers=headers, params=params, timeout=10)
-            data = response.json()
-            
-            return jsonify(data)
+            return jsonify({'documents': []})
             
     except requests.RequestException as e:
         return jsonify({'error': f'네트워크 오류: {str(e)}'}), 500
@@ -1027,19 +990,15 @@ def get_financial_metrics():
 
 # 🚀 웹 서버 실행
 if __name__ == '__main__':
-    print("\n🌞 태양광 발전량 예측 시스템이 시작되었습니다!")
-    print("🌍 브라우저에서 다음 주소로 접속하세요:")
-    print("   http://127.0.0.1:80")
-    print("   또는 http://localhost:80")
+    # Railway에서 제공하는 PORT 환경변수 사용
+    port = int(os.environ.get('PORT', 5000))
+    print(f"\n🌞 태양광 발전량 예측 시스템이 시작되었습니다!")
+    print(f"🌍 포트: {port}")
     print("\n📊 기능:")
     print("   - 지도 클릭으로 태양광 발전량 계산")
     print("   - 경사각/방위각 조정")
     print("   - 경제성 분석")
     print("   - 월별 발전량 차트")
-    print("\n⏹️  종료하려면 Ctrl+C를 누르세요\n")
     
-    # Flask 앱 실행 (파일 변경 시 자동 재시작)
-    try:
-        app.run(host='127.0.0.1', port=80, debug=True)  # debug=True 추가
-    except KeyboardInterrupt:
-        print("\n👋 서버가 종료되었습니다.")
+    # Railway 환경에서 실행
+    app.run(host='0.0.0.0', port=port, debug=False)
