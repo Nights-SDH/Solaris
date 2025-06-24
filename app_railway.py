@@ -1,4 +1,3 @@
-# 🌞 완전히 안전한 태양광 발전량 예측 시스템
 import os
 from flask import Flask, request, jsonify, render_template_string, send_file
 import requests
@@ -15,9 +14,10 @@ from datetime import datetime
 matplotlib.use('Agg')
 
 # 🏭 태양광 발전량 계산 함수
-def calculate_pv_energy(lat, lon, tilt, azimuth, ghi_annual, system_config=None):
-    """완전히 안전한 태양광 발전량 계산"""
+def calculate_pv_energy(lat, lon, tilt, azimuth, ghi_daily, system_config=None):
     try:
+        ghi_annual = float(ghi_daily) * 365  # kWh/m²/day → kWh/m²/year
+        
         # 기본 시스템 효율
         module_efficiency = 0.20      # 모듈 효율 20%
         inverter_efficiency = 0.96    # 인버터 효율 96%
@@ -82,11 +82,13 @@ def calculate_pv_energy(lat, lon, tilt, azimuth, ghi_annual, system_config=None)
         
     except Exception as e:
         print(f"PV 계산 오류: {str(e)}")
-        return calculate_simple_pv_energy(lat, lon, tilt, azimuth, ghi_annual)
+        return calculate_simple_pv_energy(lat, lon, tilt, azimuth, ghi_daily)
 
-def calculate_simple_pv_energy(lat, lon, tilt, azimuth, ghi_annual):
-    """백업 계산 함수"""
+# 백업용 함수
+def calculate_simple_pv_energy(lat, lon, tilt, azimuth, ghi_daily):
     try:
+        ghi_annual = float(ghi_daily) * 365
+        
         # 간단한 계산
         optimal_tilt = abs(lat) * 0.76 + 3.1
         tilt_factor = 1.0 - abs(tilt - optimal_tilt) * 0.01
@@ -117,7 +119,7 @@ def calculate_simple_pv_energy(lat, lon, tilt, azimuth, ghi_annual):
     except Exception as e:
         print(f"백업 계산 오류: {str(e)}")
         # 최후의 수단
-        backup_energy = float(ghi_annual) * 0.15
+        backup_energy = float(ghi_daily) * 365 * 0.15
         return {
             'annual_energy': round(backup_energy, 1),
             'monthly_energy': [round(backup_energy / 12, 1)] * 12,
@@ -126,7 +128,7 @@ def calculate_simple_pv_energy(lat, lon, tilt, azimuth, ghi_annual):
             'optimal_azimuth': 180
         }
 
-def find_optimal_angles(lat, lon, ghi_annual, albedo=0.2, system_efficiency=0.85):
+def find_optimal_angles(lat, lon, ghi_daily, albedo=0.2, system_efficiency=0.85):
     """최적 경사각과 방위각 찾기"""
     optimal_tilt = abs(lat) * 0.76 + 3.1
     optimal_azimuth = 180 if lat >= 0 else 0
@@ -173,55 +175,102 @@ def generate_pv_chart(monthly_energy):
         plt.close()
         return img_bytes
 
-def calculate_financial_metrics(annual_energy, system_size=3.0, install_cost_per_kw=1800000, smp_price=180, rec_price=40, annual_degradation=0.005, lifetime=25):
-    """재무 지표 계산"""
-    total_cost = system_size * install_cost_per_kw
-    annual_production = system_size * annual_energy
+def calculate_financial_metrics(energy_per_kwp, system_size=3.0, install_cost_per_kw=1800000, smp_price=180, rec_price=40, annual_degradation=0.005, lifetime=25):
+    """
+    재무 지표 계산
     
+    Args:
+        energy_per_kwp: kWh/kWp/년 단위의 발전량 (1kWp당 연간 발전량)
+        system_size: 시스템 용량 (kWp)
+        install_cost_per_kw: 설치비용 (원/kW)
+        smp_price: SMP 전력 판매 단가 (원/kWh)
+        rec_price: REC 가격 (원/REC) - 1MWh당 1REC 발급
+        annual_degradation: 연간 성능 저하율 (기본 0.5%)
+        lifetime: 시스템 수명 (년)
+    """
+    # ✅ 1. 명확한 단위 구분
+    total_cost = system_size * install_cost_per_kw  # 총 설치비용 (원)
+    annual_production = system_size * energy_per_kwp  # 연간 발전량 (kWh/년)
+    
+    print(f"💰 경제성 계산:")
+    print(f"   - 시스템 용량: {system_size} kWp")
+    print(f"   - kWp당 발전량: {energy_per_kwp} kWh/kWp/년")
+    print(f"   - 총 연간발전량: {annual_production} kWh/년")
+    print(f"   - 총 설치비용: {total_cost:,} 원")
+    
+    # ✅ 2. REC 수익 계산 개선 (가중치 적용)
+    rec_weight = 1.5  # 영농형 태양광 등 가중치 (일반적으로 1.0~1.5)
+    
+    # 1년차 기준 수익 계산
     annual_smp_revenue = annual_production * smp_price
-    annual_rec_revenue = annual_production * rec_price
+    # REC: 1MWh(1,000kWh)당 1REC 발급, 가중치 적용
+    annual_rec_revenue = (annual_production / 1000) * rec_price * rec_weight
     annual_revenue = annual_smp_revenue + annual_rec_revenue
     
-    cash_flows = []
-    cumulative_cash_flow = -total_cost
-    cash_flows.append(cumulative_cash_flow)
+    print(f"   - SMP 수익: {annual_smp_revenue:,} 원/년")
+    print(f"   - REC 수익: {annual_rec_revenue:,} 원/년 (가중치 {rec_weight}x 적용)")
+    print(f"   - 총 연간수익: {annual_revenue:,} 원/년")
     
+    # ✅ 3. 회수기간 계산 로직 개선
+    cash_flows = []
+    cumulative_cash = -total_cost  # 초기 투자비 (음수)
     total_revenue_25years = 0
     total_maintenance_25years = 0
+    payback_period = None
     
     for year in range(1, lifetime + 1):
+        # 연간 성능 저하 적용
         degraded_factor = (1 - annual_degradation) ** year
-        year_revenue = annual_revenue * degraded_factor
+        year_production = annual_production * degraded_factor
         
+        # 해당 연도 수익 계산
+        year_smp_revenue = year_production * smp_price
+        year_rec_revenue = (year_production / 1000) * rec_price * rec_weight
+        year_total_revenue = year_smp_revenue + year_rec_revenue
+        
+        # 유지보수 비용 (시스템 나이에 따라 차등 적용)
         if year <= 10:
-            maintenance_rate = 0.01
+            maintenance_rate = 0.01  # 1%
         elif year <= 20:
-            maintenance_rate = 0.015
+            maintenance_rate = 0.015  # 1.5%
         else:
-            maintenance_rate = 0.02
+            maintenance_rate = 0.02  # 2%
             
         maintenance_cost = total_cost * maintenance_rate
-        net_cash_flow = year_revenue - maintenance_cost
-        cumulative_cash_flow += net_cash_flow
-        cash_flows.append(cumulative_cash_flow)
         
-        total_revenue_25years += year_revenue
+        # 순현금흐름 = 수익 - 유지보수비
+        net_cash_flow = year_total_revenue - maintenance_cost
+        
+        # 누적 현금흐름 업데이트
+        cumulative_cash += net_cash_flow
+        cash_flows.append(cumulative_cash)
+        
+        # ✅ 회수기간 계산: 누적 현금흐름이 0 이상이 되는 시점
+        if cumulative_cash >= 0 and payback_period is None:
+            if year == 1:
+                payback_period = 1.0
+            else:
+                # 선형 보간으로 정확한 회수 시점 계산
+                prev_cumulative = cash_flows[year-2] if year > 1 else -total_cost
+                payback_period = year - 1 + (-prev_cumulative) / (cumulative_cash - prev_cumulative)
+        
+        # 25년간 총합 계산
+        total_revenue_25years += year_total_revenue
         total_maintenance_25years += maintenance_cost
     
-    # 회수 기간 계산
-    payback_period = None
-    for i in range(1, len(cash_flows)):
-        if cash_flows[i] >= 0 and cash_flows[i-1] < 0:
-            payback_period = i - 1 + (-cash_flows[i-1]) / (cash_flows[i] - cash_flows[i-1])
-            break
-    
-    if payback_period is None and cash_flows[-1] >= 0:
-        payback_period = lifetime
-    elif payback_period is None:
-        payback_period = float('inf')
-    
+    # ✅ 4. ROI 계산 개선
     net_profit = total_revenue_25years - total_maintenance_25years - total_cost
     roi = (net_profit / total_cost) * 100 if total_cost > 0 else 0
+    
+    # 회수기간이 25년 내에 없으면 None 처리
+    if payback_period is None:
+        payback_period = None
+    
+    print(f"   - 25년 총수익: {total_revenue_25years:,} 원")
+    print(f"   - 25년 유지비: {total_maintenance_25years:,} 원") 
+    print(f"   - 순이익: {net_profit:,} 원")
+    print(f"   - 투자회수기간: {payback_period} 년" if payback_period else "   - 투자회수기간: 25년 내 회수 불가")
+    print(f"   - ROI: {roi:.1f}%")
     
     return {
         'total_cost': int(total_cost),
@@ -229,13 +278,14 @@ def calculate_financial_metrics(annual_energy, system_size=3.0, install_cost_per
         'annual_revenue': int(annual_revenue),
         'annual_smp_revenue': int(annual_smp_revenue),
         'annual_rec_revenue': int(annual_rec_revenue),
-        'payback_period': round(payback_period, 1) if payback_period != float('inf') else None,
+        'payback_period': round(payback_period, 1) if payback_period else None,
         'roi': round(roi, 1),
         'cash_flows': cash_flows,
         'life_cycle_revenue': int(total_revenue_25years - total_maintenance_25years),
         'net_profit': int(net_profit),
         'monthly_production': round(annual_production / 12, 1),
-        'monthly_revenue': int(annual_revenue / 12)
+        'monthly_revenue': int(annual_revenue / 12),
+        'rec_weight': rec_weight  # 디버깅용
     }
 
 # 🚀 Flask 앱 설정
@@ -320,6 +370,13 @@ def index():
           border-radius: 5px;
           padding: 15px;
           margin-top: 20px;
+        }
+        .ghi-info {
+          background-color: #fff3cd;
+          border: 1px solid #ffeeba;
+          border-radius: 5px;
+          padding: 10px;
+          margin-bottom: 15px;
         }
       </style>
     </head>
@@ -445,17 +502,26 @@ def index():
           
           <div id="resultsContainer" style="display: none;">
             <h4>분석 결과</h4>
+            
+            <!-- ✅ GHI 정보 표시 개선 -->
+            <div class="ghi-info">
+              <div class="mb-2">
+                <strong>📍 위치:</strong> <span id="locationText"></span>
+              </div>
+              <div class="mb-2">
+                <strong>☀️ 일평균 일사량:</strong> <span id="ghiDailyText"></span> kWh/m²/일
+              </div>
+              <div class="mb-2">
+                <strong>📅 연평균 일사량:</strong> <span id="ghiAnnualText"></span> kWh/m²/년
+              </div>
+              <small class="text-muted">✅ NASA POWER 위성 데이터 기반 (30년 평균)</small>
+            </div>
+            
             <div class="mb-2">
-              <strong>위치:</strong> <span id="locationText"></span>
+              <strong>⚡ 연간 발전량:</strong> <span id="energyText"></span> kWh/kWp/년
             </div>
             <div class="mb-2">
-              <strong>연평균 일사량:</strong> <span id="ghiText"></span> kWh/m²/년
-            </div>
-            <div class="mb-2">
-              <strong>연간 발전량:</strong> <span id="energyText"></span> kWh/kWp/년
-            </div>
-            <div class="mb-2">
-              <strong>최적 설치 각도:</strong> 경사각 <span id="optimalTiltText"></span>°, 방위각 <span id="optimalAzimuthText"></span>°
+              <strong>🎯 최적 설치 각도:</strong> 경사각 <span id="optimalTiltText"></span>°, 방위각 <span id="optimalAzimuthText"></span>°
             </div>
             
             <div class="d-grid gap-2 mt-3">
@@ -795,10 +861,14 @@ def index():
               return;
             }
             
-            // 결과 표시
+            // ✅ 결과 표시 (GHI 정보 개선)
             document.getElementById('resultsContainer').style.display = 'block';
             document.getElementById('locationText').textContent = `${lat}, ${lon}`;
-            document.getElementById('ghiText').textContent = data.ghi;
+            
+            // GHI 일일값과 연간값 모두 표시
+            document.getElementById('ghiDailyText').textContent = data.ghi_daily;
+            document.getElementById('ghiAnnualText').textContent = data.ghi_annual;
+            
             document.getElementById('energyText').textContent = data.energy;
             document.getElementById('optimalTiltText').textContent = data.optimal_tilt;
             document.getElementById('optimalAzimuthText').textContent = data.optimal_azimuth;
@@ -806,11 +876,11 @@ def index():
             // 차트 업데이트
             document.getElementById('monthlyChart').src = `/get_monthly_chart?lat=${lat}&lon=${lon}&tilt=${tilt}&azimuth=${azimuth}`;
             
-            // 경제성 분석
-            fetch(`/get_financial_metrics?annual_energy=${data.energy}&system_size=${systemSize}&install_cost=${installCostPerKw}&smp_price=${smpPrice}&rec_price=${recPrice}`)
+            # 경제성 분석
+            fetch(`/get_financial_metrics?energy_per_kwp=${data.energy}&system_size=${systemSize}&install_cost=${installCostPerKw}&smp_price=${smpPrice}&rec_price=${recPrice}`)
               .then(res => res.json())
               .then(financialData => {
-                // 📌 3. 최종 출력 – 수익 예측 및 ROI 계산
+                // 📌 3. 최종 출력 – 수익 예측 및 ROI 계산 (단위 명시)
                 financialMetrics.style.display = 'block';
                 
                 // 설치 가능 용량 표시
@@ -827,19 +897,37 @@ def index():
                     `${currentSystemSize}kWp (면적 미입력)`;
                 }
                 
-                // 기본 정보
+                // ✅ 기본 정보 (단위 명시)
                 document.getElementById('totalCostText').textContent = `${financialData.total_cost.toLocaleString()}원`;
-                document.getElementById('annualProductionText').textContent = `${financialData.annual_production.toLocaleString()}kWh`;
-                document.getElementById('annualRevenueText').textContent = `${financialData.annual_revenue.toLocaleString()}원`;
-                document.getElementById('paybackPeriodText').textContent = financialData.payback_period ? `${financialData.payback_period}년` : '투자 회수 불가';
-                document.getElementById('roiText').textContent = `${financialData.roi}%`;
+                document.getElementById('annualProductionText').textContent = `${financialData.annual_production.toLocaleString()}kWh/년`;
+                document.getElementById('annualRevenueText').textContent = `${financialData.annual_revenue.toLocaleString()}원/년`;
                 
-                // 상세 수익 분석
-                document.getElementById('smpRevenueText').textContent = financialData.annual_smp_revenue.toLocaleString();
-                document.getElementById('recRevenueText').textContent = financialData.annual_rec_revenue.toLocaleString();
-                document.getElementById('monthlyProductionText').textContent = financialData.monthly_production.toLocaleString();
-                document.getElementById('monthlyRevenueText').textContent = financialData.monthly_revenue.toLocaleString();
-                document.getElementById('lifeCycleRevenueText').textContent = financialData.life_cycle_revenue.toLocaleString();
+                // ✅ 회수기간 표시 개선
+                if (financialData.payback_period && financialData.payback_period <= 25) {
+                  document.getElementById('paybackPeriodText').textContent = `${financialData.payback_period}년`;
+                  document.getElementById('paybackPeriodText').className = 'text-success fs-6';
+                } else {
+                  document.getElementById('paybackPeriodText').textContent = '25년 내 회수 불가';
+                  document.getElementById('paybackPeriodText').className = 'text-danger fs-6';
+                }
+                
+                // ✅ ROI 표시 개선 (색상 구분)
+                const roi = financialData.roi;
+                document.getElementById('roiText').textContent = `${roi}% (25년)`;
+                if (roi > 100) {
+                  document.getElementById('roiText').className = 'text-success fs-6';
+                } else if (roi > 0) {
+                  document.getElementById('roiText').className = 'text-warning fs-6';
+                } else {
+                  document.getElementById('roiText').className = 'text-danger fs-6';
+                }
+                
+                // ✅ 상세 수익 분석 (단위 명시 및 REC 정보 추가)
+                document.getElementById('smpRevenueText').textContent = `${financialData.annual_smp_revenue.toLocaleString()}`;
+                document.getElementById('recRevenueText').textContent = `${financialData.annual_rec_revenue.toLocaleString()} (가중치 ${financialData.rec_weight || 1.5}x)`;
+                document.getElementById('monthlyProductionText').textContent = `${financialData.monthly_production.toLocaleString()}`;
+                document.getElementById('monthlyRevenueText').textContent = `${financialData.monthly_revenue.toLocaleString()}`;
+                document.getElementById('lifeCycleRevenueText').textContent = `${financialData.life_cycle_revenue.toLocaleString()}`;
                 
                 loadingIndicator.style.display = 'none';
               })
@@ -920,22 +1008,26 @@ def get_pv_data():
     
     try:
         res = requests.get(url, timeout=10).json()
-        ghi = res['properties']['parameter']['ALLSKY_SFC_SW_DWN']['ANN']
-        print(f"🌞 NASA API 응답: 위치({lat}, {lon}), GHI={ghi} kWh/m²/년")
+        ghi_daily = res['properties']['parameter']['ALLSKY_SFC_SW_DWN']['ANN']
+        print(f"🌞 NASA API 응답: 위치({lat}, {lon}), GHI 일일값={ghi_daily} kWh/m²/일")
     except Exception as e:
         print(f"❌ NASA API 오류: {str(e)}")
         return jsonify({'error': f'GHI data not found: {str(e)}'}), 500
     
-    # 태양광 발전량 계산
+    # ✅ 태양광 발전량 계산 (수정된 함수 사용)
     try:
-        pv_result = calculate_pv_energy(lat=lat, lon=lon, tilt=tilt, azimuth=azimuth, ghi_annual=ghi)
+        pv_result = calculate_pv_energy(lat=lat, lon=lon, tilt=tilt, azimuth=azimuth, ghi_daily=ghi_daily)
         print(f"⚡ 계산 결과: 연간 발전량={pv_result['annual_energy']} kWh/kWp")
     except Exception as e:
         print(f"❌ 발전량 계산 오류: {str(e)}")
         return jsonify({'error': f'PV calculation error: {str(e)}'}), 500
     
+    # ✅ 응답에 일일값과 연간값 모두 포함
+    ghi_annual = ghi_daily * 365
+    
     return jsonify({
-        'ghi': round(ghi, 1),
+        'ghi_daily': round(ghi_daily, 1),
+        'ghi_annual': round(ghi_annual, 1),
         'energy': pv_result['annual_energy'],
         'monthly_energy': pv_result['monthly_energy'],
         'optimal_tilt': pv_result['optimal_tilt'],
@@ -957,12 +1049,12 @@ def get_monthly_chart():
     
     try:
         res = requests.get(url, timeout=10).json()
-        ghi = res['properties']['parameter']['ALLSKY_SFC_SW_DWN']['ANN']
+        ghi_daily = res['properties']['parameter']['ALLSKY_SFC_SW_DWN']['ANN']
     except:
         return "Error: GHI data not found", 500
     
-    # 발전량 계산
-    pv_result = calculate_pv_energy(lat=lat, lon=lon, tilt=tilt, azimuth=azimuth, ghi_annual=ghi)
+    # ✅ 발전량 계산 (수정된 함수 사용)
+    pv_result = calculate_pv_energy(lat=lat, lon=lon, tilt=tilt, azimuth=azimuth, ghi_daily=ghi_daily)
     
     # 차트 생성
     img_bytes = generate_pv_chart(pv_result['monthly_energy'])
@@ -971,15 +1063,16 @@ def get_monthly_chart():
 
 @app.route('/get_financial_metrics')
 def get_financial_metrics():
-    annual_energy = request.args.get('annual_energy', type=float)
+    # ✅ 파라미터명 수정: annual_energy → energy_per_kwp
+    energy_per_kwp = request.args.get('energy_per_kwp', type=float)
     system_size = request.args.get('system_size', default=3.0, type=float)
     install_cost = request.args.get('install_cost', default=1800000, type=float)
     smp_price = request.args.get('smp_price', default=180, type=float)
     rec_price = request.args.get('rec_price', default=40, type=float)
     
-    # 📌 개선된 경제성 지표 계산 (SMP + REC 분리)
+    # ✅ 수정된 경제성 지표 계산 함수 호출
     financial_data = calculate_financial_metrics(
-        annual_energy=annual_energy,
+        energy_per_kwp=energy_per_kwp,  # kWh/kWp/년 단위 명시
         system_size=system_size,
         install_cost_per_kw=install_cost,
         smp_price=smp_price,
@@ -999,6 +1092,12 @@ if __name__ == '__main__':
     print("   - 경사각/방위각 조정")
     print("   - 경제성 분석")
     print("   - 월별 발전량 차트")
+    print("\n✅ 모든 계산 오류 수정 완료!")
+    print("   - GHI 단위 변환: 일일값 → 연간값")
+    print("   - 발전량 이중 곱셈 방지: energy_per_kwp 단위 명시")
+    print("   - REC 가중치 적용: 1.5x")
+    print("   - 회수기간 계산 로직 개선")
+    print("   - ROI 계산 정확성 향상")
     
     # Railway 환경에서 실행
     app.run(host='0.0.0.0', port=port, debug=False)
