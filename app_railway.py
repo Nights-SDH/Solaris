@@ -1,4 +1,4 @@
-# 🌞 디바이스 감지 및 분리 라우팅 태양광 시스템 (완전판)
+# 🌞 디바이스 감지 및 분리 라우팅 태양광 시스템 (수정된 버전)
 import os
 from flask import Flask, request, jsonify, render_template_string, send_file, send_from_directory, redirect, url_for
 import requests
@@ -101,6 +101,7 @@ def calculate_farmland_solar(area_pyeong, lat, lon):
         
         smp_revenue = annual_generation_kwh * smp_price
         rec_revenue = (annual_generation_kwh / 1000) * rec_weight * rec_price
+        
         # 설치비용 및 회수기간
         install_cost_per_kw = 1800000
         total_install_cost = install_capacity_kw * install_cost_per_kw
@@ -137,27 +138,36 @@ def calculate_farmland_solar(area_pyeong, lat, lon):
         }
         
     except Exception as e:
-        print(f"계산 오류: {str(e)}")
+        print(f"calculate_farmland_solar 오류: {str(e)}")
         return {
             'installable': False,
             'message': '계산 중 오류가 발생했습니다.'
         }
 
 def calculate_desktop_solar(lat, lng, system_size, tilt=30, azimuth=180, smp_price=128.39, rec_price=70000):
-    """데스크톱/태블릿용 고급 계산"""
+    """데스크톱/태블릿용 고급 계산 (수정된 버전)"""
     try:
-        # 입력값 검증 및 기본값 설정 추가
+        print(f"🔧 calculate_desktop_solar 호출: lat={lat}, lng={lng}, size={system_size}, tilt={tilt}, azimuth={azimuth}")
+        
+        # 입력값 검증 및 기본값 설정
         if not lat or not lng:
+            print("❌ 위치 정보가 없음")
             return {'success': False, 'error': '위치 정보가 필요합니다.'}
         
-        # 기본값 설정 강화
-        system_size = float(system_size) if system_size else 30.0
-        tilt = float(tilt) if tilt else 30.0
-        azimuth = float(azimuth) if azimuth else 180.0
-        smp_price = float(smp_price) if smp_price else 128.39
-        rec_price = float(rec_price) if rec_price else 70000.0
+        # 기본값 설정 및 타입 변환
+        try:
+            system_size = float(system_size) if system_size else 30.0
+            tilt = float(tilt) if tilt else 30.0
+            azimuth = float(azimuth) if azimuth else 180.0
+            smp_price = float(smp_price) if smp_price else 128.39
+            rec_price = float(rec_price) if rec_price else 70000.0
+            lat = float(lat)
+            lng = float(lng)
+        except (ValueError, TypeError) as e:
+            print(f"❌ 타입 변환 오류: {e}")
+            return {'success': False, 'error': '입력값 형식이 올바르지 않습니다.'}
         
-        # 유효성 검사 추가
+        # 유효성 검사
         if system_size <= 0 or system_size > 10000:
             system_size = 30.0
         if tilt < 0 or tilt > 90:
@@ -165,26 +175,24 @@ def calculate_desktop_solar(lat, lng, system_size, tilt=30, azimuth=180, smp_pri
         if azimuth < 0 or azimuth > 360:
             azimuth = 180.0
         
-        print(f"📊 계산 파라미터: lat={lat}, lng={lng}, size={system_size}")
+        print(f"📊 정규화된 파라미터: size={system_size}, tilt={tilt}, azimuth={azimuth}")
         
-        # 고급 계산 로직
+        # 기본 발전량 계산
         annual_generation_per_kw = 1300  # kWh/kW/년
-        annual_generation = system_size * annual_generation_per_kw
+        base_annual_generation = system_size * annual_generation_per_kw
         
-        # 각도 효율 계산
+        # 최적 각도 계산
         optimal_tilt = abs(lat) * 0.76 + 3.1
         optimal_azimuth = 180 if lat >= 0 else 0
         
-        tilt_efficiency = 1.0 - abs(tilt - optimal_tilt) * 0.008
-        tilt_efficiency = max(0.8, min(1.1, tilt_efficiency))
+        # 효율 계산
+        tilt_efficiency = max(0.8, min(1.1, 1.0 - abs(tilt - optimal_tilt) * 0.008))
         
-        azimuth_diff = abs(azimuth - optimal_azimuth)
-        if azimuth_diff > 180:
-            azimuth_diff = 360 - azimuth_diff
-        azimuth_efficiency = 1.0 - azimuth_diff * 0.002
-        azimuth_efficiency = max(0.7, min(1.0, azimuth_efficiency))
+        azimuth_diff = min(abs(azimuth - optimal_azimuth), 360 - abs(azimuth - optimal_azimuth))
+        azimuth_efficiency = max(0.7, min(1.0, 1.0 - azimuth_diff * 0.002))
         
-        adjusted_generation = annual_generation * tilt_efficiency * azimuth_efficiency
+        # 최종 발전량
+        adjusted_generation = base_annual_generation * tilt_efficiency * azimuth_efficiency
         
         # 수익 계산
         smp_revenue = adjusted_generation * smp_price
@@ -194,25 +202,33 @@ def calculate_desktop_solar(lat, lng, system_size, tilt=30, azimuth=180, smp_pri
         annual_revenue = smp_revenue + rec_revenue - om_cost
         
         # 투자 회수
-        install_cost = system_size * 20000000
+        install_cost = system_size * 2000000  # 2백만원/kWp로 수정
         payback_years = install_cost / annual_revenue if annual_revenue > 0 else 999
         
-        return {
+        result = {
             'success': True,
             'annual_generation': round(adjusted_generation),
             'annual_revenue': round(annual_revenue),
             'smp_revenue': round(smp_revenue),
             'rec_revenue': round(rec_revenue),
+            'om_cost': round(om_cost),
             'install_cost': round(install_cost),
-            'payback_years': round(payback_years, 1) if payback_years < 50 else None,
+            'payback_years': round(payback_years, 1) if payback_years < 50 else 99.9,
             'optimal_tilt': round(optimal_tilt, 1),
             'optimal_azimuth': round(optimal_azimuth),
             'tilt_efficiency': round(tilt_efficiency * 100, 1),
-            'azimuth_efficiency': round(azimuth_efficiency * 100, 1)
+            'azimuth_efficiency': round(azimuth_efficiency * 100, 1),
+            'system_size': system_size,
+            'location': f"{lat:.4f}, {lng:.4f}"
         }
+        
+        print(f"✅ 계산 완료: {result}")
+        return result
         
     except Exception as e:
         print(f"❌ calculate_desktop_solar 오류: {str(e)}")
+        import traceback
+        traceback.print_exc()
         return {'success': False, 'error': f'계산 중 오류: {str(e)}'}
 
 # 🎯 메인 라우팅 (자동 디바이스 감지)
@@ -762,10 +778,10 @@ def mobile_index():
               localStorage.setItem('solarResult', JSON.stringify(data.result));
               window.location.href = '/mobile/result';
             } else {
-              alert('❌ ' + (data.result?.message || '계산 중 오류가 발생했습니다.1'));
+              alert('❌ ' + (data.result?.message || '계산 중 오류가 발생했습니다.'));
             }
           } catch (error) {
-            alert('❌ 서버 오류가 발생했습니다.1');
+            alert('❌ 서버 오류가 발생했습니다.');
           }
           
           showLoading(false);
@@ -1351,7 +1367,7 @@ def mobile_result_page():
 
 # 🖥️ 데스크톱 UI 함수들
 def desktop_index():
-    """데스크톱 전용 메인 페이지"""
+    """데스크톱 전용 메인 페이지 (수정된 버전)"""
     return render_template_string("""
     <!DOCTYPE html>
     <html lang="ko">
@@ -1492,6 +1508,12 @@ def desktop_index():
           0% { transform: rotate(0deg); }
           100% { transform: rotate(360deg); }
         }
+        
+        .alert-danger {
+          background-color: #f8d7da;
+          border-color: #f5c6cb;
+          color: #721c24;
+        }
       </style>
     </head>
     <body>
@@ -1571,6 +1593,10 @@ def desktop_index():
               <small class="text-muted">위치 설정 후 해당 지점의 태양광 발전량을 자동 계산합니다.</small>
             </div>
             
+            <div class="alert alert-danger" id="errorAlert" style="display: none;">
+              <strong>⚠️ 오류:</strong> <span id="errorMessage"></span>
+            </div>
+            
             <div class="results-container" id="resultsContainer">
               <h4>📊 분석 결과</h4>
               
@@ -1585,6 +1611,12 @@ def desktop_index():
               </div>
               <div class="mb-2">
                 <strong>⏰ 투자 회수기간:</strong> <span id="paybackText">-</span>년
+              </div>
+              <div class="mb-2">
+                <strong>🎯 경사각 효율:</strong> <span id="tiltEffText">-</span>%
+              </div>
+              <div class="mb-2">
+                <strong>🧭 방위각 효율:</strong> <span id="azimuthEffText">-</span>%
               </div>
               
               <div class="d-grid gap-2 mt-3">
@@ -1622,11 +1654,21 @@ def desktop_index():
         const recPriceInput = document.getElementById('recPriceInput');
         const loading = document.getElementById('loading');
         const resultsContainer = document.getElementById('resultsContainer');
+        const errorAlert = document.getElementById('errorAlert');
+        const errorMessage = document.getElementById('errorMessage');
+        
+        function showError(message) {
+          errorMessage.textContent = message;
+          errorAlert.style.display = 'block';
+          setTimeout(() => {
+            errorAlert.style.display = 'none';
+          }, 5000);
+        }
         
         async function searchAddress() {
           const address = addressInput.value.trim();
           if (!address) {
-            alert('주소를 입력해주세요.');
+            showError('주소를 입력해주세요.');
             return;
           }
           
@@ -1641,24 +1683,28 @@ def desktop_index():
               setMapLocation(lat, lng, display_name);
               addressInput.value = '';
             } else {
-              alert('❌ 주소를 찾을 수 없습니다.');
+              showError('주소를 찾을 수 없습니다.');
             }
           } catch (error) {
-            alert('❌ 검색 중 오류가 발생했습니다.');
+            console.error('주소 검색 오류:', error);
+            showError('검색 중 오류가 발생했습니다.');
           }
           
           showLoading(false);
         }
         
         function setMapLocation(lat, lng, address = '') {
+          console.log(`🗺️ 위치 설정: ${lat}, ${lng}, ${address}`);
+          
           if (currentMarker) {
             map.removeLayer(currentMarker);
           }
           
           currentMarker = L.marker([lat, lng]).addTo(map);
-          currentLatLng = { lat, lng };
+          currentLatLng = { lat, lng, address };
           map.setView([lat, lng], 12);
           
+          // 자동으로 계산 실행
           updateResults();
         }
         
@@ -1689,19 +1735,25 @@ def desktop_index():
         });
         
         async function updateResults() {
-          if (!currentLatLng) return;
+          if (!currentLatLng) {
+            console.log('❌ 위치 정보가 없어 계산을 건너뜁니다.');
+            return;
+          }
           
+          console.log('🔄 결과 업데이트 시작...');
           showLoading(true);
           
           const params = {
             lat: currentLatLng.lat,
             lng: currentLatLng.lng,
-            system_size: parseFloat(systemSizeInput.value),
-            tilt: parseFloat(tiltSlider.value),
-            azimuth: parseFloat(azimuthSlider.value),
-            smp_price: parseFloat(smpPriceInput.value),
-            rec_price: parseFloat(recPriceInput.value)
+            system_size: parseFloat(systemSizeInput.value) || 30,
+            tilt: parseFloat(tiltSlider.value) || 30,
+            azimuth: parseFloat(azimuthSlider.value) || 180,
+            smp_price: parseFloat(smpPriceInput.value) || 128.39,
+            rec_price: parseFloat(recPriceInput.value) || 70000
           };
+          
+          console.log('📊 계산 파라미터:', params);
           
           try {
             const response = await fetch('/api/desktop-calculate', {
@@ -1710,37 +1762,65 @@ def desktop_index():
               body: JSON.stringify(params)
             });
             
+            console.log('📡 서버 응답 상태:', response.status);
             const data = await response.json();
+            console.log('📥 서버 응답 데이터:', data);
             
-            if (data.success) {
-              displayResults(data.result);
-              optimalTilt = data.result.optimal_tilt || 30;
-              optimalAzimuth = data.result.optimal_azimuth || 180;
+            if (data.success && data.annual_generation !== undefined) {
+              displayResults(data);
+              optimalTilt = data.optimal_tilt || 30;
+              optimalAzimuth = data.optimal_azimuth || 180;
+              console.log('✅ 계산 성공');
             } else {
-              alert('❌ 계산 중 오류가 발생했습니다.2');
+              console.error('❌ 계산 실패:', data.error || '알 수 없는 오류');
+              showError(data.error || '계산 중 오류가 발생했습니다.');
             }
           } catch (error) {
-            console.error('계산 오류:', error);
-            alert('❌ 서버 오류가 발생했습니다.2', error);
+            console.error('❌ 네트워크 오류:', error);
+            showError('서버와의 통신 중 오류가 발생했습니다.');
           }
           
           showLoading(false);
         }
         
         function displayResults(result) {
+          console.log('🖼️ 결과 표시:', result);
+          
+          // 안전한 값 표시를 위한 헬퍼 함수
+          const safeValue = (value, fallback = '-') => {
+            return (value !== undefined && value !== null) ? value : fallback;
+          };
+          
+          const safeNumber = (value, fallback = 0) => {
+            const num = parseFloat(value);
+            return isNaN(num) ? fallback : num;
+          };
+          
           document.getElementById('locationText').textContent = 
-            `${currentLatLng.lat.toFixed(4)}, ${currentLatLng.lng.toFixed(4)}`;
+            currentLatLng.address || `${currentLatLng.lat.toFixed(4)}, ${currentLatLng.lng.toFixed(4)}`;
+          
           document.getElementById('energyText').textContent = 
-            result.annual_generation?.toLocaleString() || '-';
+            safeNumber(result.annual_generation).toLocaleString();
+          
           document.getElementById('revenueText').textContent = 
-            result.annual_revenue?.toLocaleString() || '-';
+            safeNumber(result.annual_revenue).toLocaleString();
+          
           document.getElementById('paybackText').textContent = 
-            result.payback_years || '-';
+            safeValue(result.payback_years);
+          
+          document.getElementById('tiltEffText').textContent = 
+            safeValue(result.tilt_efficiency);
+          
+          document.getElementById('azimuthEffText').textContent = 
+            safeValue(result.azimuth_efficiency);
           
           resultsContainer.style.display = 'block';
+          console.log('✅ 결과 표시 완료');
         }
         
         function optimizeAngles() {
+          console.log(`🎯 최적 각도 적용: 경사각=${optimalTilt}°, 방위각=${optimalAzimuth}°`);
+          
           tiltSlider.value = optimalTilt;
           tiltValue.textContent = optimalTilt;
           azimuthSlider.value = optimalAzimuth;
@@ -1754,7 +1834,18 @@ def desktop_index():
           loading.style.display = show ? 'flex' : 'none';
         }
         
-        console.log('🖥️ Desktop version loaded');
+        // 페이지 로드 시 초기화
+        window.addEventListener('load', function() {
+          console.log('🖥️ Desktop version loaded');
+          
+          // 기본값 확인
+          console.log('📊 기본 설정값:');
+          console.log(`   시스템 용량: ${systemSizeInput.value}kWp`);
+          console.log(`   경사각: ${tiltSlider.value}°`);
+          console.log(`   방위각: ${azimuthSlider.value}°`);
+          console.log(`   SMP 가격: ${smpPriceInput.value}원/kWh`);
+          console.log(`   REC 가격: ${recPriceInput.value}원/REC`);
+        });
       </script>
     </body>
     </html>
@@ -2259,12 +2350,12 @@ def tablet_index():
             const data = await response.json();
             
             if (data.success) {
-              tabletDisplayResults(data.result);
+              tabletDisplayResults(data);
             } else {
-              alert('❌ 계산 중 오류가 발생했습니다.3');
+              alert('❌ 계산 중 오류가 발생했습니다.');
             }
           } catch (error) {
-            alert('❌ 서버 오류가 발생했습니다.3');
+            alert('❌ 서버 오류가 발생했습니다.');
           }
         }
         
@@ -2444,6 +2535,7 @@ def api_search_address():
             return jsonify({'success': False, 'error': '주소를 찾을 수 없습니다.'})
             
     except Exception as e:
+        print(f"주소 검색 오류: {str(e)}")
         return jsonify({'success': False, 'error': '검색 중 오류가 발생했습니다.'})
 
 @app.route('/api/simulate', methods=['POST'])
@@ -2467,13 +2559,16 @@ def api_simulate():
         return jsonify({'success': True, 'result': result})
         
     except Exception as e:
+        print(f"모바일 시뮬레이션 오류: {str(e)}")
         return jsonify({'success': False, 'error': '계산 중 오류가 발생했습니다.'})
 
 @app.route('/api/desktop-calculate', methods=['POST'])
 def api_desktop_calculate():
-    """데스크톱/태블릿용 고급 계산 API"""
+    """데스크톱/태블릿용 고급 계산 API (수정된 버전)"""
     try:
         data = request.get_json()
+        print(f"🔧 API 호출 받음: {data}")
+        
         lat = data.get('lat')
         lng = data.get('lng')
         system_size = data.get('system_size', 30)
@@ -2483,13 +2578,22 @@ def api_desktop_calculate():
         rec_price = data.get('rec_price', 70000)
         
         if not lat or not lng:
+            print("❌ 위치 정보 누락")
             return jsonify({'success': False, 'error': '위치 정보가 필요합니다.'})
         
+        print(f"📍 계산 요청: lat={lat}, lng={lng}, size={system_size}")
+        
         result = calculate_desktop_solar(lat, lng, system_size, tilt, azimuth, smp_price, rec_price)
+        
+        print(f"📊 계산 결과: {result}")
+        
         return jsonify(result)
         
     except Exception as e:
-        return jsonify({'success': False, 'error': '계산 중 오류가 발생했습니다.'})
+        print(f"❌ API 오류: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'error': f'서버 오류: {str(e)}'})
 
 @app.route('/api/consultation', methods=['POST'])
 def api_consultation():
@@ -2537,41 +2641,6 @@ def api_consultation():
             print(f"      - 예상 연간 수익: {result.get('annual_revenue', 'N/A'):,}원")
             print(f"      - 설치 용량: {result.get('install_capacity_kw', 'N/A')}kW")
         
-        # 실제 환경에서는 다음 기능들을 구현:
-        # 1. 데이터베이스에 저장 (개인정보 암호화)
-        # 2. 관리자 알림 (이메일, 슬랙, SMS)
-        # 3. 고객 확인 SMS 발송
-        # 4. CRM 시스템 연동
-        # 5. 개인정보 처리 로그 기록
-        
-        # 샘플 데이터베이스 저장 코드 (실제 구현 시 사용)
-        """
-        import sqlite3
-        import hashlib
-        
-        # 개인정보 해싱 (GDPR 준수)
-        phone_hash = hashlib.sha256(consultation_data['phone'].encode()).hexdigest()
-        
-        conn = sqlite3.connect('consultations.db')
-        cursor = conn.cursor()
-        
-        cursor.execute('''
-            INSERT INTO consultations 
-            (name, phone_hash, privacy_consent, device_type, timestamp, ip_address)
-            VALUES (?, ?, ?, ?, ?, ?)
-        ''', (
-            consultation_data['name'],
-            phone_hash,
-            consultation_data['privacy_consent'],
-            consultation_data['device_type'],
-            consultation_data['timestamp'],
-            consultation_data['ip_address']
-        ))
-        
-        conn.commit()
-        conn.close()
-        """
-        
         return jsonify({
             'success': True,
             'message': '상담 신청이 완료되었습니다.',
@@ -2597,8 +2666,14 @@ def static_files(filename):
 # 🚀 웹 서버 실행
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
-    print(f"\n🌞 디바이스 감지 및 분리 라우팅 태양광 시스템이 시작되었습니다!")
+    print(f"\n🌞 수정된 디바이스 감지 및 분리 라우팅 태양광 시스템이 시작되었습니다!")
     print(f"🌍 포트: {port}")
+    print(f"\n🔧 주요 수정사항:")
+    print(f"   ✅ calculate_desktop_solar 함수 오류 처리 개선")
+    print(f"   ✅ 프론트엔드 오류 처리 및 로깅 강화")
+    print(f"   ✅ 데이터 타입 검증 및 기본값 설정")
+    print(f"   ✅ API 응답 구조 일관성 확보")
+    print(f"   ✅ 사용자 친화적 오류 메시지")
     print(f"\n🔄 자동 디바이스 감지 및 라우팅:")
     print(f"   📱 모바일 감지 → 농지 태양광 UI (간단)")
     print(f"   📟 태블릿 감지 → 중간 복잡도 UI")
@@ -2613,16 +2688,12 @@ if __name__ == '__main__':
     print(f"   GET  /api/device-info - 디바이스 정보 확인")
     print(f"   GET  /api/search-address - 주소 검색")
     print(f"   POST /api/simulate - 모바일용 계산")
-    print(f"   POST /api/desktop-calculate - 데스크톱/태블릿용 계산")
+    print(f"   POST /api/desktop-calculate - 데스크톱/태블릿용 계산 (수정됨)")
     print(f"   POST /api/consultation - 상담 신청")
-    print(f"\n🎯 각 버전별 특징:")
-    print(f"   📱 모바일: 평 단위, 농지 테마, 상담 신청 중심")
-    print(f"   📟 태블릿: 좌우 분할, 중간 기능, 터치 최적화")
-    print(f"   🖥️ 데스크톱: 상세 설정, 전문 분석, 마우스 최적화")
-    print(f"\n✨ 디바이스별 최적화 완료:")
-    print(f"   - User-Agent 기반 자동 감지")
-    print(f"   - 각 디바이스에 맞는 UI/UX")
-    print(f"   - 실시간 버전 전환 가능")
-    print(f"   - 디바이스 정보 수집 및 분석")
+    print(f"\n🛠️ 오류 해결:")
+    print(f"   - TypeError: Cannot read properties of undefined → 해결")
+    print(f"   - 데이터 타입 안전성 강화")
+    print(f"   - 프론트엔드-백엔드 데이터 구조 일치")
+    print(f"   - 상세한 로깅 및 디버깅 정보 추가")
     
     app.run(host='0.0.0.0', port=port, debug=True)
