@@ -127,7 +127,7 @@ def calculate_farmland_solar(area_pyeong, lat, lon):
             'annual_revenue': round(total_annual_revenue),
             'smp_revenue': round(smp_revenue),
             'rec_revenue': round(rec_revenue),
-            'om_cost': round(om_cost),
+            'om_cost': round(total_om_cost),
             'install_cost': round(total_install_cost),
             'payback_years': round(payback_years, 1),
             'farming_revenue': round(farming_revenue),
