@@ -742,7 +742,7 @@ def mobile_index():
               localStorage.setItem('solarResult', JSON.stringify(data.result));
               window.location.href = '/mobile/result';
             } else {
-              alert('❌ ' + (data.result?.message || '계산 중 오류가 발생했습니다.'));
+              alert('❌ ' + (data.result?.message || '계산 중 오류가 발생했습니다.1'));
             }
           } catch (error) {
             alert('❌ 서버 오류가 발생했습니다.');
@@ -1697,7 +1697,7 @@ def desktop_index():
               optimalTilt = data.result.optimal_tilt || 30;
               optimalAzimuth = data.result.optimal_azimuth || 180;
             } else {
-              alert('❌ 계산 중 오류가 발생했습니다.');
+              alert('❌ 계산 중 오류가 발생했습니다.2');
             }
           } catch (error) {
             console.error('계산 오류:', error);
@@ -2241,7 +2241,7 @@ def tablet_index():
             if (data.success) {
               tabletDisplayResults(data.result);
             } else {
-              alert('❌ 계산 중 오류가 발생했습니다.');
+              alert('❌ 계산 중 오류가 발생했습니다.3');
             }
           } catch (error) {
             alert('❌ 서버 오류가 발생했습니다.');
