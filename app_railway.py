@@ -142,7 +142,7 @@ def calculate_farmland_solar(area_pyeong, lat, lon):
             'message': '계산 중 오류가 발생했습니다.'
         }
 
-def calculate_desktop_solar(lat, lng, system_size, tilt=30, azimuth=180, smp_price=113.9, rec_price=70000):
+def calculate_desktop_solar(lat, lng, system_size, tilt=30, azimuth=180, smp_price=128.39, rec_price=70000):
     """데스크톱/태블릿용 고급 계산"""
     try:
         # 고급 계산 로직
@@ -1535,7 +1535,7 @@ def desktop_index():
             <div class="mb-3">
               <label for="smpPriceInput" class="form-label">💡 SMP 전력 판매 단가 (원/kWh)</label>
               <input type="number" class="form-control" id="smpPriceInput" 
-                     min="50" max="500" value="113.9" step="0.1">
+                     min="50" max="500" value="128.39" step="0.1">
             </div>
             
             <div class="mb-3">
@@ -2231,7 +2231,7 @@ def tablet_index():
                 system_size: systemSize,
                 tilt: parseFloat(tabletTiltSlider.value),
                 azimuth: parseFloat(tabletAzimuthSlider.value),
-                smp_price: 113.9,
+                smp_price: 128.39,
                 rec_price: 70000
               })
             });
@@ -2459,7 +2459,7 @@ def api_desktop_calculate():
         system_size = data.get('system_size', 30)
         tilt = data.get('tilt', 30)
         azimuth = data.get('azimuth', 180)
-        smp_price = data.get('smp_price', 113.9)
+        smp_price = data.get('smp_price', 128.39)
         rec_price = data.get('rec_price', 70000)
         
         if not lat or not lng:
