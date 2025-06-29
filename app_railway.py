@@ -1701,7 +1701,7 @@ def desktop_index():
             }
           } catch (error) {
             console.error('계산 오류:', error);
-            alert('❌ 서버 오류가 발생했습니다.2');
+            alert('❌ 서버 오류가 발생했습니다.2', error);
           }
           
           showLoading(false);
