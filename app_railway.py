@@ -961,6 +961,160 @@ def mobile_result_page():
           padding: 10px;
           border-radius: 8px;
         }
+        
+        /* 개인정보 처리 동의 스타일 */
+        .privacy-section {
+          background: #f8f9fa;
+          border: 1px solid #e9ecef;
+          border-radius: 8px;
+          padding: 15px;
+          margin-bottom: 15px;
+        }
+        
+        .privacy-notice {
+          font-size: 14px;
+          color: #495057;
+          margin-bottom: 12px;
+          text-align: center;
+          line-height: 1.4;
+        }
+        
+        .privacy-consent {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+        
+        .consent-checkbox {
+          display: flex;
+          align-items: center;
+          cursor: pointer;
+          font-size: 14px;
+          color: #495057;
+          position: relative;
+        }
+        
+        .consent-checkbox input[type="checkbox"] {
+          width: 18px;
+          height: 18px;
+          margin-right: 8px;
+          cursor: pointer;
+        }
+        
+        .privacy-detail-btn {
+          background: #007bff;
+          color: white;
+          border: none;
+          padding: 4px 8px;
+          border-radius: 4px;
+          font-size: 12px;
+          margin-left: 8px;
+          cursor: pointer;
+        }
+        
+        .privacy-detail-btn:hover {
+          background: #0056b3;
+        }
+        
+        /* 팝업 스타일 */
+        .privacy-popup {
+          display: none;
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          background: rgba(0, 0, 0, 0.6);
+          z-index: 10000;
+          justify-content: center;
+          align-items: center;
+        }
+        
+        .privacy-popup-content {
+          background: white;
+          border-radius: 12px;
+          box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+          max-width: 90%;
+          width: 400px;
+          max-height: 80vh;
+          overflow-y: auto;
+        }
+        
+        .privacy-popup-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 20px 20px 0;
+          border-bottom: 1px solid #e9ecef;
+        }
+        
+        .privacy-popup-header h3 {
+          margin: 0;
+          color: #2E8B57;
+          font-size: 18px;
+        }
+        
+        .close-popup {
+          background: none;
+          border: none;
+          font-size: 20px;
+          cursor: pointer;
+          color: #666;
+          padding: 5px;
+        }
+        
+        .close-popup:hover {
+          color: #000;
+        }
+        
+        .privacy-popup-body {
+          padding: 20px;
+        }
+        
+        .privacy-item {
+          margin-bottom: 15px;
+          padding: 12px;
+          background: #f8f9fa;
+          border-radius: 6px;
+          border-left: 4px solid #2E8B57;
+        }
+        
+        .privacy-item strong {
+          color: #2E8B57;
+          display: block;
+          margin-bottom: 5px;
+        }
+        
+        .privacy-popup-footer {
+          padding: 0 20px 20px;
+          display: flex;
+          gap: 10px;
+          justify-content: center;
+        }
+        
+        .privacy-agree-btn {
+          background: #2E8B57;
+          color: white;
+          border: none;
+          padding: 10px 20px;
+          border-radius: 6px;
+          cursor: pointer;
+          font-weight: 600;
+        }
+        
+        .privacy-close-btn {
+          background: #6c757d;
+          color: white;
+          border: none;
+          padding: 10px 20px;
+          border-radius: 6px;
+          cursor: pointer;
+        }
+        
+        .consultation-btn:disabled {
+          background: #ccc !important;
+          cursor: not-allowed;
+        }
       </style>
     </head>
     <body>
@@ -1002,8 +1156,53 @@ def mobile_result_page():
           <form id="consultationForm">
             <input type="text" class="form-input" id="customerName" placeholder="이름" required>
             <input type="tel" class="form-input" id="customerPhone" placeholder="전화번호" required>
-            <button type="submit" class="consultation-btn">📞 상담 신청하기</button>
+            
+            <!-- 개인정보 처리 동의 -->
+            <div class="privacy-section">
+              <div class="privacy-notice">
+                📋 입력하신 정보는 영농형 태양광 설치 상담 목적으로 사용됩니다.
+              </div>
+              
+              <div class="privacy-consent">
+                <label class="consent-checkbox">
+                  <input type="checkbox" id="privacyConsent" required>
+                  <span class="checkmark"></span>
+                  개인정보 수집 및 이용에 동의합니다
+                  <button type="button" class="privacy-detail-btn" onclick="showPrivacyDetails()">보기</button>
+                </label>
+              </div>
+            </div>
+            
+            <button type="submit" class="consultation-btn" id="submitConsultationBtn" disabled>📞 상담 신청하기</button>
           </form>
+        </div>
+        
+        <!-- 개인정보 처리방침 팝업 -->
+        <div class="privacy-popup" id="privacyPopup">
+          <div class="privacy-popup-content">
+            <div class="privacy-popup-header">
+              <h3>📋 개인정보 수집·이용 동의 안내</h3>
+              <button class="close-popup" onclick="closePrivacyPopup()">✕</button>
+            </div>
+            <div class="privacy-popup-body">
+              <div class="privacy-item">
+                <strong>1. 수집 항목:</strong> 이름, 전화번호
+              </div>
+              <div class="privacy-item">
+                <strong>2. 수집 목적:</strong> 설치 상담 및 예상 수익 안내
+              </div>
+              <div class="privacy-item">
+                <strong>3. 보관 기간:</strong> 상담 완료 후 1년, 고객 요청 시 즉시 삭제
+              </div>
+              <div class="privacy-item">
+                <strong>4. 동의 거부 시:</strong> 상담 신청이 제한될 수 있습니다
+              </div>
+            </div>
+            <div class="privacy-popup-footer">
+              <button class="privacy-agree-btn" onclick="agreeAndClosePopup()">동의하고 닫기</button>
+              <button class="privacy-close-btn" onclick="closePrivacyPopup()">닫기</button>
+            </div>
+          </div>
         </div>
         
         <a href="/mobile" class="recalculate-btn">🔙 다시 계산하기</a>
@@ -1047,14 +1246,55 @@ def mobile_result_page():
           document.getElementById('ratioText').textContent = ratio;
         }
         
+        // 개인정보 동의 체크박스 이벤트
+        document.getElementById('privacyConsent').addEventListener('change', function() {
+          const submitBtn = document.getElementById('submitConsultationBtn');
+          submitBtn.disabled = !this.checked;
+        });
+        
+        // 개인정보 처리방침 팝업 함수들
+        function showPrivacyDetails() {
+          document.getElementById('privacyPopup').style.display = 'flex';
+        }
+        
+        function closePrivacyPopup() {
+          document.getElementById('privacyPopup').style.display = 'none';
+        }
+        
+        function agreeAndClosePopup() {
+          document.getElementById('privacyConsent').checked = true;
+          document.getElementById('submitConsultationBtn').disabled = false;
+          closePrivacyPopup();
+        }
+        
+        // 팝업 외부 클릭 시 닫기
+        document.getElementById('privacyPopup').addEventListener('click', function(e) {
+          if (e.target === this) {
+            closePrivacyPopup();
+          }
+        });
+        
         document.getElementById('consultationForm').addEventListener('submit', async function(e) {
           e.preventDefault();
           
           const name = document.getElementById('customerName').value.trim();
           const phone = document.getElementById('customerPhone').value.trim();
+          const privacyConsent = document.getElementById('privacyConsent').checked;
           
           if (!name || !phone) {
             alert('이름과 전화번호를 모두 입력해주세요.');
+            return;
+          }
+          
+          if (!privacyConsent) {
+            alert('개인정보 수집 및 이용에 동의해주세요.');
+            return;
+          }
+          
+          // 전화번호 형식 검증
+          const phoneRegex = /^[0-9-+\s()]+$/;
+          if (!phoneRegex.test(phone)) {
+            alert('올바른 전화번호를 입력해주세요.');
             return;
           }
           
@@ -1062,15 +1302,26 @@ def mobile_result_page():
             const response = await fetch('/api/consultation', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ name, phone })
+              body: JSON.stringify({ 
+                name, 
+                phone,
+                privacy_consent: true,
+                result_data: resultData
+              })
             });
             
-            if (response.ok) {
-              alert('✅ 신청이 완료되었습니다!\\n담당자가 빠르게 연락드리겠습니다.');
+            const data = await response.json();
+            
+            if (data.success) {
+              alert('✅ 신청이 완료되었습니다!\\n담당자가 빠르게 연락드리겠습니다.\\n\\n개인정보는 상담 목적으로만 사용되며, 상담 완료 후 1년간 보관됩니다.');
               this.reset();
+              document.getElementById('submitConsultationBtn').disabled = true;
+            } else {
+              alert('❌ 신청 중 오류가 발생했습니다. 다시 시도해주세요.');
             }
           } catch (error) {
-            alert('❌ 신청 중 오류가 발생했습니다.');
+            console.error('상담 신청 오류:', error);
+            alert('❌ 서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
           }
         });
       </script>
@@ -2222,29 +2473,97 @@ def api_desktop_calculate():
 
 @app.route('/api/consultation', methods=['POST'])
 def api_consultation():
-    """상담 신청 API (공통)"""
+    """상담 신청 API (개인정보 처리 동의 포함)"""
     try:
         data = request.get_json()
         device = detect_device()
         
+        # 개인정보 처리 동의 확인
+        privacy_consent = data.get('privacy_consent', False)
+        if not privacy_consent:
+            return jsonify({
+                'success': False, 
+                'error': '개인정보 수집 및 이용에 동의해주세요.'
+            })
+        
         consultation_data = {
             'name': data.get('name'),
             'phone': data.get('phone'),
+            'privacy_consent': privacy_consent,
             'device_type': device['device_type'],
+            'os': device['os'],
+            'browser': device['browser'],
             'user_agent': device['user_agent'],
-            'timestamp': time.strftime('%Y-%m-%d %H:%M:%S')
+            'result_data': data.get('result_data'),  # 계산 결과 데이터
+            'ip_address': request.remote_addr,
+            'timestamp': time.strftime('%Y-%m-%d %H:%M:%S'),
+            'consent_timestamp': time.strftime('%Y-%m-%d %H:%M:%S')
         }
         
-        print(f"📞 상담 신청 접수 ({device['device_type']}):")
+        print(f"\n📞 상담 신청 접수 ({device['device_type']}):")
         print(f"   이름: {consultation_data['name']}")
         print(f"   전화번호: {consultation_data['phone']}")
-        print(f"   디바이스: {consultation_data['device_type']}")
+        print(f"   개인정보 동의: {consultation_data['privacy_consent']}")
+        print(f"   디바이스: {consultation_data['device_type']} ({consultation_data['os']}/{consultation_data['browser']})")
+        print(f"   IP 주소: {consultation_data['ip_address']}")
         print(f"   신청시간: {consultation_data['timestamp']}")
+        print(f"   동의시간: {consultation_data['consent_timestamp']}")
         
-        return jsonify({'success': True, 'message': '상담 신청이 완료되었습니다.'})
+        # 결과 데이터가 있는 경우 추가 로깅
+        if consultation_data['result_data']:
+            result = consultation_data['result_data']
+            print(f"   📊 계산 결과:")
+            print(f"      - 면적: {result.get('area_pyeong', 'N/A')}평")
+            print(f"      - 예상 연간 수익: {result.get('annual_revenue', 'N/A'):,}원")
+            print(f"      - 설치 용량: {result.get('install_capacity_kw', 'N/A')}kW")
+        
+        # 실제 환경에서는 다음 기능들을 구현:
+        # 1. 데이터베이스에 저장 (개인정보 암호화)
+        # 2. 관리자 알림 (이메일, 슬랙, SMS)
+        # 3. 고객 확인 SMS 발송
+        # 4. CRM 시스템 연동
+        # 5. 개인정보 처리 로그 기록
+        
+        # 샘플 데이터베이스 저장 코드 (실제 구현 시 사용)
+        """
+        import sqlite3
+        import hashlib
+        
+        # 개인정보 해싱 (GDPR 준수)
+        phone_hash = hashlib.sha256(consultation_data['phone'].encode()).hexdigest()
+        
+        conn = sqlite3.connect('consultations.db')
+        cursor = conn.cursor()
+        
+        cursor.execute('''
+            INSERT INTO consultations 
+            (name, phone_hash, privacy_consent, device_type, timestamp, ip_address)
+            VALUES (?, ?, ?, ?, ?, ?)
+        ''', (
+            consultation_data['name'],
+            phone_hash,
+            consultation_data['privacy_consent'],
+            consultation_data['device_type'],
+            consultation_data['timestamp'],
+            consultation_data['ip_address']
+        ))
+        
+        conn.commit()
+        conn.close()
+        """
+        
+        return jsonify({
+            'success': True,
+            'message': '상담 신청이 완료되었습니다.',
+            'privacy_notice': '개인정보는 상담 목적으로만 사용되며, 상담 완료 후 1년간 보관됩니다.'
+        })
         
     except Exception as e:
-        return jsonify({'success': False, 'error': '신청 처리 중 오류가 발생했습니다.'})
+        print(f"❌ 상담 신청 처리 오류: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': '신청 처리 중 오류가 발생했습니다.'
+        })
 
 # 정적 파일 서빙
 @app.route('/static/<path:filename>')
