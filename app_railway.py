@@ -146,6 +146,27 @@ def calculate_farmland_solar(area_pyeong, lat, lon):
 def calculate_desktop_solar(lat, lng, system_size, tilt=30, azimuth=180, smp_price=128.39, rec_price=70000):
     """데스크톱/태블릿용 고급 계산"""
     try:
+        # 입력값 검증 및 기본값 설정 추가
+        if not lat or not lng:
+            return {'success': False, 'error': '위치 정보가 필요합니다.'}
+        
+        # 기본값 설정 강화
+        system_size = float(system_size) if system_size else 30.0
+        tilt = float(tilt) if tilt else 30.0
+        azimuth = float(azimuth) if azimuth else 180.0
+        smp_price = float(smp_price) if smp_price else 128.39
+        rec_price = float(rec_price) if rec_price else 70000.0
+        
+        # 유효성 검사 추가
+        if system_size <= 0 or system_size > 10000:
+            system_size = 30.0
+        if tilt < 0 or tilt > 90:
+            tilt = 30.0
+        if azimuth < 0 or azimuth > 360:
+            azimuth = 180.0
+        
+        print(f"📊 계산 파라미터: lat={lat}, lng={lng}, size={system_size}")
+        
         # 고급 계산 로직
         annual_generation_per_kw = 1300  # kWh/kW/년
         annual_generation = system_size * annual_generation_per_kw
@@ -191,10 +212,8 @@ def calculate_desktop_solar(lat, lng, system_size, tilt=30, azimuth=180, smp_pri
         }
         
     except Exception as e:
-        return {
-            'success': False,
-            'error': '계산 중 오류가 발생했습니다.'
-        }
+        print(f"❌ calculate_desktop_solar 오류: {str(e)}")
+        return {'success': False, 'error': f'계산 중 오류: {str(e)}'}
 
 # 🎯 메인 라우팅 (자동 디바이스 감지)
 @app.route('/')
@@ -2606,4 +2625,4 @@ if __name__ == '__main__':
     print(f"   - 실시간 버전 전환 가능")
     print(f"   - 디바이스 정보 수집 및 분석")
     
-    app.run(host='0.0.0.0', port=port, debug=False)
+    app.run(host='0.0.0.0', port=port, debug=True)
