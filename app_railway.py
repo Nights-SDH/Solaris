@@ -745,7 +745,7 @@ def mobile_index():
               alert('❌ ' + (data.result?.message || '계산 중 오류가 발생했습니다.1'));
             }
           } catch (error) {
-            alert('❌ 서버 오류가 발생했습니다.');
+            alert('❌ 서버 오류가 발생했습니다.1');
           }
           
           showLoading(false);
@@ -1701,7 +1701,7 @@ def desktop_index():
             }
           } catch (error) {
             console.error('계산 오류:', error);
-            alert('❌ 서버 오류가 발생했습니다.');
+            alert('❌ 서버 오류가 발생했습니다.2');
           }
           
           showLoading(false);
@@ -2244,7 +2244,7 @@ def tablet_index():
               alert('❌ 계산 중 오류가 발생했습니다.3');
             }
           } catch (error) {
-            alert('❌ 서버 오류가 발생했습니다.');
+            alert('❌ 서버 오류가 발생했습니다.3');
           }
         }
         
