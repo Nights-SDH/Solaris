@@ -104,7 +104,6 @@ def calculate_farmland_solar(area_pyeong, lat, lon):
         # 설치비용 및 회수기간
         install_cost_per_kw = 1800000
         total_install_cost = install_capacity_kw * install_cost_per_kw
-        payback_years = total_install_cost / total_annual_revenue if total_annual_revenue > 0 else 999
         
         # 연간 운영비 상세 계산
         maintenance_cost = install_capacity_kw * 15000    # 유지보수비
@@ -114,6 +113,7 @@ def calculate_farmland_solar(area_pyeong, lat, lon):
         
         total_annual_revenue = smp_revenue + rec_revenue - total_om_cost
         
+        payback_years = total_install_cost / total_annual_revenue if total_annual_revenue > 0 else 999
         
         # 농업 수익 비교
         farming_revenue = area_pyeong * 3571
