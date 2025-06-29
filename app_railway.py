@@ -84,7 +84,7 @@ def calculate_farmland_solar(area_pyeong, lat, lon):
         
         # 면적 변환
         area_sqm = area_pyeong * 3.3
-        install_capacity_kw = area_pyeong * 0.14
+        install_capacity_kw = area_sqm / 10
         
         # 지역별 GHI 데이터
         if 33 <= lat <= 38 and 125 <= lon <= 130:
@@ -95,27 +95,23 @@ def calculate_farmland_solar(area_pyeong, lat, lon):
         annual_generation_kwh = install_capacity_kw * annual_generation_per_kw
         
         # 수익 계산
-        smp_price = 128.39
+        smp_price = 113.9
         rec_price = 70000
-        rec_weight = 1.2
+        rec_weight = 1.5
         
         smp_revenue = annual_generation_kwh * smp_price
         rec_revenue = (annual_generation_kwh / 1000) * rec_weight * rec_price
-        # 연간 운영비 상세 계산
-        maintenance_cost = install_capacity_kw * 15000    # 유지보수비
-        insurance_cost = total_install_cost * 0.003      # 보험료 0.3%
-        management_cost = 500000                          # 기타 관리비
-        total_om_cost = maintenance_cost + insurance_cost + management_cost
+        om_cost = install_capacity_kw * 12000
         
-        total_annual_revenue = smp_revenue + rec_revenue - total_om_cost
+        total_annual_revenue = smp_revenue + rec_revenue - om_cost
         
         # 설치비용 및 회수기간
-        install_cost_per_kw = 1800000
+        install_cost_per_kw = 20000000
         total_install_cost = install_capacity_kw * install_cost_per_kw
         payback_years = total_install_cost / total_annual_revenue if total_annual_revenue > 0 else 999
         
         # 농업 수익 비교
-        farming_revenue = area_pyeong * 3571
+        farming_revenue = area_pyeong * 500000
         solar_vs_farming_ratio = total_annual_revenue / farming_revenue if farming_revenue > 0 else 1
         
         return {
@@ -127,7 +123,7 @@ def calculate_farmland_solar(area_pyeong, lat, lon):
             'annual_revenue': round(total_annual_revenue),
             'smp_revenue': round(smp_revenue),
             'rec_revenue': round(rec_revenue),
-            'om_cost': round(total_om_cost),
+            'om_cost': round(om_cost),
             'install_cost': round(total_install_cost),
             'payback_years': round(payback_years, 1),
             'farming_revenue': round(farming_revenue),
@@ -142,7 +138,7 @@ def calculate_farmland_solar(area_pyeong, lat, lon):
             'message': '계산 중 오류가 발생했습니다.'
         }
 
-def calculate_desktop_solar(lat, lng, system_size, tilt=30, azimuth=180, smp_price=128.39, rec_price=70000):
+def calculate_desktop_solar(lat, lng, system_size, tilt=30, azimuth=180, smp_price=113.9, rec_price=70000):
     """데스크톱/태블릿용 고급 계산"""
     try:
         # 고급 계산 로직
