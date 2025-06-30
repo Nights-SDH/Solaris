@@ -74,7 +74,7 @@ def detect_device():
 
 # 🌞 태양광 계산 함수 (공통)
 def calculate_farmland_solar(area_pyeong, lat, lon):
-    """농지 태양광 수익 계산 (모바일/데스크톱 공통)"""
+    """영농형 태양광 수익 계산 (모바일/데스크톱 공통)"""
     try:
         if area_pyeong < 20:
             return {
@@ -294,7 +294,7 @@ def mobile_index():
     <html lang="ko">
     <head>
       <meta charset="utf-8">
-      <title>농지 태양광 수익 계산기 📱</title>
+      <title>영농형 태양광 수익 계산기 📱</title>
       <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
       <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css">
       <style>
@@ -807,7 +807,7 @@ def mobile_result_page():
     <html lang="ko">
     <head>
       <meta charset="utf-8">
-      <title>농지 태양광 수익 결과 📱</title>
+      <title>영농형 태양광 수익 결과 📱</title>
       <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
       <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -1159,7 +1159,7 @@ def mobile_result_page():
       <div class="container" id="resultContainer">
         <div class="success-header">
           <h1>🌞 설치 가능합니다!</h1>
-          <div class="subtitle">농지 태양광으로 새로운 수익을 시작하세요</div>
+          <div class="subtitle">영농형 태양광으로 새로운 수익을 만들어보세요</div>
         </div>
         
         <div class="revenue-summary">
@@ -1183,7 +1183,7 @@ def mobile_result_page():
             </div>
           </div>
           <div class="comparison-result" id="comparisonResult">
-            태양광이 <span id="ratioText">2</span>배 더 수익성이 좋습니다!
+            기존 농사 수익과 동시에 <span id="ratioText">2</span>배의 태양광 수익!
           </div>
         </div>
         
@@ -2668,16 +2668,6 @@ if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     print(f"\n🌞 수정된 디바이스 감지 및 분리 라우팅 태양광 시스템이 시작되었습니다!")
     print(f"🌍 포트: {port}")
-    print(f"\n🔧 주요 수정사항:")
-    print(f"   ✅ calculate_desktop_solar 함수 오류 처리 개선")
-    print(f"   ✅ 프론트엔드 오류 처리 및 로깅 강화")
-    print(f"   ✅ 데이터 타입 검증 및 기본값 설정")
-    print(f"   ✅ API 응답 구조 일관성 확보")
-    print(f"   ✅ 사용자 친화적 오류 메시지")
-    print(f"\n🔄 자동 디바이스 감지 및 라우팅:")
-    print(f"   📱 모바일 감지 → 농지 태양광 UI (간단)")
-    print(f"   📟 태블릿 감지 → 중간 복잡도 UI")
-    print(f"   🖥️ 데스크톱 감지 → 전문가용 UI (상세)")
     print(f"\n🔗 접속 방법:")
     print(f"   자동 감지: http://localhost:{port}/")
     print(f"   강제 모바일: http://localhost:{port}/mobile")
@@ -2690,10 +2680,5 @@ if __name__ == '__main__':
     print(f"   POST /api/simulate - 모바일용 계산")
     print(f"   POST /api/desktop-calculate - 데스크톱/태블릿용 계산 (수정됨)")
     print(f"   POST /api/consultation - 상담 신청")
-    print(f"\n🛠️ 오류 해결:")
-    print(f"   - TypeError: Cannot read properties of undefined → 해결")
-    print(f"   - 데이터 타입 안전성 강화")
-    print(f"   - 프론트엔드-백엔드 데이터 구조 일치")
-    print(f"   - 상세한 로깅 및 디버깅 정보 추가")
     
     app.run(host='0.0.0.0', port=port, debug=True)
