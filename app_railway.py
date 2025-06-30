@@ -579,7 +579,7 @@ def mobile_index():
       <div class="container">
         <div class="header">
           <h1>🌾 내 농지 정보 입력하기</h1>
-          <div class="subtitle">태양광으로 새로운 수익을 만들어보세요</div>
+          <div class="subtitle">영농형 태양광으로 새로운 수익을 만들어보세요</div>
         </div>
         
         <div class="content">
