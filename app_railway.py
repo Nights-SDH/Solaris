@@ -948,7 +948,7 @@ def mobile_result_page():
           align-items: end;
           justify-content: space-around;
           margin-bottom: 15px;
-          height: 120px;
+          height: 160px;
           padding-top: 20px;
         }
         
