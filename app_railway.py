@@ -1,13 +1,8 @@
 # 🌞 디바이스 감지 및 분리 라우팅 태양광 시스템 (수정된 버전)
 import os
-from flask import Flask, request, jsonify, render_template_string, send_file, send_from_directory, redirect, url_for
+from flask import Flask, request, jsonify, render_template_string, send_from_directory
 import requests
-import json
 import time
-import numpy as np
-import pandas as pd
-from io import BytesIO
-import matplotlib.pyplot as plt
 import matplotlib
 matplotlib.use('Agg')
 
