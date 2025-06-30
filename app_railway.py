@@ -949,6 +949,7 @@ def mobile_result_page():
           justify-content: space-around;
           margin-bottom: 15px;
           height: 120px;
+          padding-top: 20px;
         }
         
         .chart-bar {
@@ -965,6 +966,8 @@ def mobile_result_page():
           margin-bottom: 10px;
           position: relative;
           transition: all 0.3s ease;
+          max-height: 100px;
+          min-height: 20px;
         }
         
         .bar.farming {
